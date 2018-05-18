@@ -18,7 +18,6 @@ class DockerfileParser:
         self.error = list()
         self.grammar = self.dockerfile_instruction_grammar()
 
-
     def hasError(self):
         """Return True if errors"""
         if self.error:
@@ -48,7 +47,7 @@ class DockerfileParser:
                 counter = 0
                 for line in lines:
                     counter = counter + 1
-                    string += line.strip()
+                    string += line.strip(' ')
                     if not re.fullmatch(r".*\\\s*\n", line):
                         try:
                             result = self.grammar.parseString(string)
@@ -67,7 +66,7 @@ class DockerfileParser:
         # Fail Action
         #
         def error(s, loc, expr, error):
-            raise ParseFatalException(config.DOCKERFILE_ERROR[211].format(ligne='{ligne}', erreur=error.msg))
+            raise ParseFatalException(config.DOCKERFILE_ERROR[210].format(ligne='{ligne}', erreur=error.msg))
 
         def separator_error(s, loc, expr, error):
             raise ParseFatalException(config.DOCKERFILE_ERROR[202].format(colonne=loc, inst=s))
@@ -76,7 +75,7 @@ class DockerfileParser:
         # Parse Action (Basic verification)
         #
         def instructions_parse(strng, loc, toks):
-            """Check if the instruction exist"""
+            """Check if the instruction exist in the config file"""
 
             if toks[0] not in config.INSTRUCTION_CONFIG_LIST:
                 raise ParseFatalException(config.DOCKERFILE_ERROR[201].format(colonne=loc, inst=toks[0]))
@@ -112,13 +111,13 @@ class DockerfileParser:
         #
         # TERMINALS
         #
-        INST = Regex(r'[A-Za-z]+').setParseAction(instructions_parse)
-        STR = Regex(r'\"(.*?)\"')
-        ARG = Regex(r'\S+')
+        INST = Regex(r'\S+').setParseAction(instructions_parse)
+        STR = Regex(r'\"(.*?)\"').setName("\"chaîne de caractères\"")
+        ARG = Regex(r'\S+').setName("argument")
         COM = Regex(r'#.*').suppress()
 
         SEP = White(' ', min=1).setFailAction(separator_error).suppress()
-        EOL = lineEnd().suppress()
+        EOL = lineEnd().suppress().setName('fin de ligne')
 
         OH = Literal('[').suppress()
         CH = Literal(']').suppress()
@@ -135,6 +134,7 @@ class DockerfileParser:
         #Multiple lines separator
         continuation = '\\' - lineEnd()
         t_args_list.ignore(continuation)
+        t_args_table.ignore(continuation)
 
         #instruction grammar
         instruction = (stringStart - (COM | Optional(INST - SEP - Group(t_args))) - EOL - stringEnd()).setFailAction(error)

@@ -6,6 +6,9 @@ import yaml
 import os
 import re
 
+#------------------
+#verif_dockerfile
+#------------------
 def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
     """Fonction permettant de vérifier un fichier Dockerfile"""
 
@@ -29,34 +32,38 @@ def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
         instruction = parseResult[i][0]
         params = parseResult[i][1]
 
-        print(parseResult[i])
+        print(instruction,'--',params)
 
         #Instructions à vérifier 
         # -- FROM : Instruction en 1ère position && image disponible
         # -- EXPOSE : Port correct && 
         # -- COPY && ADD : Fichiers sources existants
         if i == 0 and instruction != 'FROM':
-            errors.append(config.DOCKERFILE_ERROR[252])
-        if instruction == 'FROM':
+            errors.append(config.DOCKERFILE_ERROR[222])
+        elif instruction == 'FROM':
             instruction_from = True
+            #TODO verification de l'image
         elif instruction == 'EXPOSE':
             instruction_expose = True
             #port exposés correspondant à un des ports du fichier docker-compose
             if(container_port and (container_port not in params)):
-                errors.append(config.DOCKERFILE_ERROR[254].format(expose_port=params))
+                errors.append(config.DOCKERFILE_ERROR[224].format(expose_port=params))
         elif instruction == 'ADD' or instruction == 'COPY':
             #verification de l'existance des dossiers ou fichiers indiqués
             if not os.path.exists(params[0]):
-                errors.append(config.DOCKERFILE_ERROR[253].format(inst=instruction, fichiers=params[0]))
+                errors.append(config.DOCKERFILE_ERROR[223].format(inst=instruction, fichiers=params[0]))
 
-    #Vérification instructions obligatoires
+    #Vérification des instructions obligatoires
     if not instruction_from:
-        errors.append(config.DOCKERFILE_ERROR[251].format(inst='FROM'))
+        errors.append(config.DOCKERFILE_ERROR[221].format(inst='FROM'))
     if not instruction_expose:
-        errors.append(config.DOCKERFILE_ERROR[251].format(inst='EXPOSE'))
+        errors.append(config.DOCKERFILE_ERROR[221].format(inst='EXPOSE'))
 
     return errors
 
+#------------------
+#verif_docker_compose
+#------------------
 def verif_docker_compose():
     """Fonction permettant de vérifier un fichier docker-compose.yml"""
     errors = list()
@@ -68,16 +75,13 @@ def verif_docker_compose():
     if(docker_compose.hasError()):
         errors.extend(docker_compose.error)
     else:
-        print("DOCKER COMPOSE")
         with open("exemples/docker-compose.yml", 'r') as stream:
             data_loaded = yaml.load(stream)
             services = data_loaded['services']
 
-            print(data_loaded['services'])
             for serviceName in services:
                 service = data_loaded['services'][serviceName]
-                print(serviceName + ' - ' + str(service))
-
+                print(serviceName,'--',service)
 
         #Vérifications 
         # -- Il existe au moins un service
@@ -87,7 +91,6 @@ def verif_docker_compose():
         # -- Au moins un service communique avec la machine hôte
         #TODO Verifications 
 
-        print("DOCKERFILE")
         errors.extend(verif_dockerfile('exemples/'))
 
 
@@ -95,13 +98,25 @@ def verif_docker_compose():
 
     #TODO
 
-
+#------------------
+#verif_logs
+#------------------
 def verif_logs():
     """Fonction permettant de vérifier les logs d'un conteneur"""
     errors = list()
+    #DEBUT verif_logs
+        #TANT QUE container FAIRE
+            #Extraction Erreurs fichier de log
 
+            #SI EXISTE Erreurs ALORS
+                #Extraction des codes et des messages
+        #FIN TANT QUE
+    #FIN verif_logs
     return errors
 
+#------------------
+# Main
+#------------------
 def main():
     """Fonction principale du script de vérification"""
     errors = list()
@@ -117,10 +132,8 @@ def main():
         errors.extend(verif_logs())
     
     #On affiche les erreurs dans la console & On les inscrits dans un fichier de log
-    counter = 1
     for error in errors:
-        print(counter,'-',error)
-        counter += 1
+        print(error)
         
 
 main()
