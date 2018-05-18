@@ -1,6 +1,6 @@
 import os
 import re
-import config as config
+import errors as err
 
 #pyparsing imports
 from pyparsing import ParserElement, ParseFatalException
@@ -10,7 +10,7 @@ from pyparsing import stringStart, stringEnd, lineStart, lineEnd, SkipTo
 class DockerfileParser:
     def __init__(self):
         """DockerfileParser Class Constructor
-
+   
         Check & Verify the syntax of a Dockerfile type file
 
         """
@@ -20,7 +20,11 @@ class DockerfileParser:
 
 
     def hasError(self):
-        """Return True if errors"""
+        """hasError
+        
+        Return True if errors
+        
+        """
         if self.error:
             return True
         else:
@@ -39,16 +43,19 @@ class DockerfileParser:
         self.error = list()
         self.file = FilePath + Filename
 
-        # By default Pyparsing stops when he detect any error 
-        # To get all errors we need to parse the file line by line
+        #On verifie que le fichier existe
         if os.path.exists(self.file):
+            #On ouvre le fichier
             with open(self.file, 'r') as file:
+                #On recupère les lignes
                 lines = file.readlines()
                 string = ''
                 counter = 0
+                #Pour chaque lignes
                 for line in lines:
                     counter = counter + 1
-                    string += line.strip()
+                    string += line
+                    #Si elle ne se termine pas par un antislash on parse l'instruction
                     if not re.fullmatch(r".*\\\s*\n", line):
                         try:
                             result = self.grammar.parseString(string)
@@ -58,43 +65,52 @@ class DockerfileParser:
                             self.error.append(str(e.msg).format(ligne=counter))
                         string = ''
         else:
-            self.error.append(config.DOCKERFILE_ERROR[200].format(chemin=self.file))
+            self.error.append(err.DOCKERFILE_ERROR[200].format(chemin=self.file))
                         
     def dockerfile_instruction_grammar(self):
         """dockerfile_instruction_grammar"""
 
-        #
-        # Fail Action
-        #
         def error(s, loc, expr, error):
-            raise ParseFatalException(config.DOCKERFILE_ERROR[211].format(ligne='{ligne}', erreur=error.msg))
+            #TODO - Erreurs perso
+            raise ParseFatalException(s, loc, err.DOCKERFILE_ERROR[211].format(ligne='{ligne}', colonne=loc, erreur=error.msg))
 
-        def separator_error(s, loc, expr, error):
-            raise ParseFatalException(config.DOCKERFILE_ERROR[202].format(colonne=loc, inst=s))
 
         #
         # Parse Action (Basic verification)
         #
         def instructions_parse(strng, loc, toks):
             """Check if the instruction exist"""
-
-            if toks[0] not in config.INSTRUCTION_CONFIG_LIST:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[201].format(colonne=loc, inst=toks[0]))
-
-            self.currentInstructionName = toks[0]
-            self.currentInstruction = config.INSTRUCTION_CONFIG_LIST[toks[0]]
+            #InstructionName : [ArgumentsFormCode, ArgumentsNumMin, ArgumentsNumMax]
+            #ArgumentsFormCode :
+            # -- 1: Simple List forms (Ex: arg1 arg2)
+            # -- 2: Table forms (Ex: ["arg1", "arg2"])
+            # -- 3: All possible forms
+            instructions = {
+                'FROM': [1, 1, 1], 
+                'RUN': [3, 1, 20], 
+                'ADD': [2, 2, 2], 
+                'COPY': [1, 2, 2], 
+                'EXPOSE': [1, 1, 1], 
+                'CMD': [3, 1, 3], 
+                'ENTRYPOINT': [3, 1, 3], 
+                'VOLUME': [3, 1, 1], 
+                'WORKDIR': [3, 1, 1]
+            }
+            if toks[0] not in instructions:
+                raise ParseFatalException(err.DOCKERFILE_ERROR[201].format(ligne='{ligne}', colonne=loc, inst=toks[0]))
+            self.currentInstruction = instructions[toks[0]]
 
         def args_table_parse(strng, loc, toks):
             """Check if the table form is correct for the current instruction arguments"""
 
             if(self.currentInstruction[0] == 1):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[204].format(colonne=loc, inst=self.currentInstructionName))
+                raise ParseFatalException(err.DOCKERFILE_ERROR[204].format(ligne='{ligne}', colonne=loc))
         
         def args_list_parse(strng, loc, toks):
             """Check if the list form is correct for the current instruction arguments"""
 
             if(self.currentInstruction[0] == 2):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[203].format(colonne=loc, inst=self.currentInstructionName))
+                raise ParseFatalException(err.DOCKERFILE_ERROR[203].format(ligne='{ligne}', colonne=loc))
         
         def args_num_parse(strng, loc, toks):
             """Check if the number of arguments is correct"""
@@ -103,22 +119,20 @@ class DockerfileParser:
             maxArg = self.currentInstruction[2]
             nbArgs = len(toks)
             if (not minArg <= nbArgs <= maxArg):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[205].format(colonne=loc, inst=self.currentInstructionName, \
-                                                                              nombre=nbArgs, min=minArg, max=maxArg))
-  
+                raise ParseFatalException(err.DOCKERFILE_ERROR[205].format(ligne='{ligne}', colonne=loc, nombre=nbArgs, min=minArg, max=maxArg))
         #INIT
         ParserElement.setDefaultWhitespaceChars(" \t")
 
         #
         # TERMINALS
         #
-        INST = Regex(r'[A-Za-z]+').setParseAction(instructions_parse)
-        STR = Regex(r'\"(.*?)\"')
-        ARG = Regex(r'\S+')
+        INST = Regex(r'[A-Za-z]+').setName('instruction').setParseAction(instructions_parse)
+        STR = Regex(r'\"(.*?)\"').setName('chaîne de caractères')
+        ARG = Regex(r'\S+').setName('argument')
         COM = Regex(r'#.*').suppress()
 
-        SEP = White(' ', min=1).setFailAction(separator_error).suppress()
-        EOL = lineEnd().suppress()
+        SEP = White(' ', min=1).setName("espace").suppress()
+        EOL = lineEnd().setName('fin de ligne').suppress()
 
         OH = Literal('[').suppress()
         CH = Literal(']').suppress()
@@ -129,14 +143,14 @@ class DockerfileParser:
         #
         #Arguments
         t_args_table = (OH - STR - ZeroOrMore(CO - STR) -  CH).setParseAction(args_table_parse)
-        t_args_list = (ARG - ZeroOrMore(ARG)).setParseAction(args_list_parse)
-        t_args = (t_args_table | t_args_list).setParseAction(args_num_parse)
+        t_args_list = (ARG - ZeroOrMore(SEP - Optional(ARG))).setParseAction(args_list_parse)
+        t_args = SEP - Optional(t_args_table | t_args_list).setParseAction(args_num_parse)
 
         #Multiple lines separator
         continuation = '\\' - lineEnd()
         t_args_list.ignore(continuation)
 
         #instruction grammar
-        instruction = (stringStart - (COM | Optional(INST - SEP - Group(t_args))) - EOL - stringEnd()).setFailAction(error)
+        instruction = stringStart - Optional(SEP) - Optional(COM | (INST - Group(t_args)).setFailAction(error)) - EOL - stringEnd()
         
         return instruction

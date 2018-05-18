@@ -1,6 +1,6 @@
 import os
 import re
-import errors as err
+import config as config
 
 #pyparsing imports
 from pyparsing import ParserElement, ParseFatalException
@@ -12,7 +12,8 @@ class DockerComposeParser:
         """DockerfileParser Class Constructor
    
         Check & Verify the syntax of a docker-compose.yml type file
-
+     
+     
         """
         self.fileparsed = list()
         self.error = list()

@@ -1,44 +1,61 @@
 import DockerComposeParser as dcp
 import DockerfileParser as dfp
-import errors as err
+import config as config
 
 import yaml
-
+import os
 import re
 
-def verif_dockerfile(path='./', filename='Dockerfile'):
+def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
     """Fonction permettant de vérifier un fichier Dockerfile"""
 
-    error = list()
-
+    errors = list()
     #Parsing
     dockerfile = dfp.DockerfileParser()
     dockerfile.parse(path, filename)
 
-
     if(dockerfile.hasError()):
-        error.extend(dockerfile.error)
-    else:  
-        parseResult = dockerfile.fileparsed
-        
-        #Foreach instruction
-        # -- Inst[i][0] = Instruction name (never null)
-        # -- Inst[i][1] = arguments list (never null)
-        for i in range(0, len(parseResult)):
-            instruction = parseResult[i][0]
-            params = parseResult[i][1]
+        errors.extend(dockerfile.error)
 
-            print(instruction,'--',params)
+    parseResult = dockerfile.fileparsed
+    
+    instruction_from = False
+    instruction_expose = False
 
-            #Instructions à vérifier 
-            # -- FROM : Instruction en 1ère position && image disponible
-            # -- EXPOSE : Port correct && 
-            # -- COPY && ADD : Fichiers sources existants
-            #TODO Verifications 
+    #Foreach instruction
+    # -- Inst[i][0] = Instruction name (never null)
+    # -- Inst[i][1] = arguments list (never null)
+    for i in range(0, len(parseResult)):
+        instruction = parseResult[i][0]
+        params = parseResult[i][1]
 
+        print(parseResult[i])
 
-    return error
+        #Instructions à vérifier 
+        # -- FROM : Instruction en 1ère position && image disponible
+        # -- EXPOSE : Port correct && 
+        # -- COPY && ADD : Fichiers sources existants
+        if i == 0 and instruction != 'FROM':
+            errors.append(config.DOCKERFILE_ERROR[252])
+        if instruction == 'FROM':
+            instruction_from = True
+        elif instruction == 'EXPOSE':
+            instruction_expose = True
+            #port exposés correspondant à un des ports du fichier docker-compose
+            if(container_port and (container_port not in params)):
+                errors.append(config.DOCKERFILE_ERROR[254].format(expose_port=params))
+        elif instruction == 'ADD' or instruction == 'COPY':
+            #verification de l'existance des dossiers ou fichiers indiqués
+            if not os.path.exists(params[0]):
+                errors.append(config.DOCKERFILE_ERROR[253].format(inst=instruction, fichiers=params[0]))
 
+    #Vérification instructions obligatoires
+    if not instruction_from:
+        errors.append(config.DOCKERFILE_ERROR[251].format(inst='FROM'))
+    if not instruction_expose:
+        errors.append(config.DOCKERFILE_ERROR[251].format(inst='EXPOSE'))
+
+    return errors
 
 def verif_docker_compose():
     """Fonction permettant de vérifier un fichier docker-compose.yml"""
@@ -81,9 +98,9 @@ def verif_docker_compose():
 
 def verif_logs():
     """Fonction permettant de vérifier les logs d'un conteneur"""
-    error = list()
+    errors = list()
 
-    return error
+    return errors
 
 def main():
     """Fonction principale du script de vérification"""
