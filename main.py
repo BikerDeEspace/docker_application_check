@@ -13,7 +13,6 @@ def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
     """Fonction permettant de vérifier un fichier Dockerfile"""
 
     errors = list()
-    #Parsing
     dockerfile = dfp.DockerfileParser()
     dockerfile.parse(path, filename)
 
@@ -32,21 +31,20 @@ def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
         instruction = parseResult[i][0]
         params = parseResult[i][1]
 
-        print(instruction,'--',params)
-
         #Instructions à vérifier 
         # -- FROM : Instruction en 1ère position && image disponible
         # -- EXPOSE : Port correct && 
         # -- COPY && ADD : Fichiers sources existants
         if i == 0 and instruction != 'FROM':
             errors.append(config.DOCKERFILE_ERROR[222])
-        elif instruction == 'FROM':
+        
+        if instruction == 'FROM':
             instruction_from = True
             #TODO verification de l'image
         elif instruction == 'EXPOSE':
             instruction_expose = True
             #port exposés correspondant à un des ports du fichier docker-compose
-            if(container_port and (container_port not in params)):
+            if container_port and (container_port not in params):
                 errors.append(config.DOCKERFILE_ERROR[224].format(expose_port=params))
         elif instruction == 'ADD' or instruction == 'COPY':
             #verification de l'existance des dossiers ou fichiers indiqués
@@ -76,20 +74,34 @@ def verif_docker_compose():
         errors.extend(docker_compose.error)
     else:
         with open("exemples/docker-compose.yml", 'r') as stream:
-            data_loaded = yaml.load(stream)
-            services = data_loaded['services']
+            try:
+                data_loaded = yaml.load(stream)
+            except yaml.scanner.ScannerError as e:
+                print(e.problem_mark)
+            """             services = data_loaded['services']
 
-            for serviceName in services:
-                service = data_loaded['services'][serviceName]
-                print(serviceName,'--',service)
+            #Vérifications 
+            # -- Il existe au moins un service
+            # -- Chaque service est basé sur une image ou un dockerfile associé
+            #       -> Image disponible
+            #       -> Dockerfile : Verifications
+            # -- Au moins un service communique avec la machine hôte
+            #TODO Verifications 
 
-        #Vérifications 
-        # -- Il existe au moins un service
-        # -- Chaque service est basé sur une image ou un dockerfile associé
-        #       -> Image disponible
-        #       -> Dockerfile : Verifications
-        # -- Au moins un service communique avec la machine hôte
-        #TODO Verifications 
+            #Existe au moins un service
+            if(services):
+                #Foreach service
+                for serviceName in services:
+                    service = services[serviceName]
+
+                    print(serviceName,' - ', service)
+
+            else:
+                errors.append(config.DOCKER_COMPOSER_ERROR[121]) """
+
+
+
+
 
         errors.extend(verif_dockerfile('exemples/'))
 
