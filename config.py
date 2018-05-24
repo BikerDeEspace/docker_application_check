@@ -20,7 +20,24 @@ INSTRUCTION_CONFIG_LIST = {
     'CMD'       : [3, 1, max], 
     'ENTRYPOINT': [3, 1, 3], 
     'VOLUME'    : [3, 1, 1], 
-    'WORKDIR'   : [3, 1, 1]
+    'WORKDIR'   : [3, 1, 1],
+    'LABEL'     : [1, 1, max]
+}
+
+#Optional instructions after main instruction arguments
+#InstructionName : [ArgumentsFormCode, ArgumentsNumMin, ArgumentsNumMax]
+#ArgumentsFormCode :
+# -- 1: Simple List forms (Ex: arg1 arg2)
+# -- 2: Table forms (Ex: ["arg1", "arg2"])
+# -- 3: All possible forms
+OPTIONAL_INSTRUCTION_CONFIG = {
+    'AS': [1, 1, 1]
+}
+
+#Optional options before main instruction arguments
+#OptionName : []
+OPTIONAL_OPTION_CONFIG = {
+    '--chown=' : ['COPY', 'ADD']
 }
 
 #
@@ -57,7 +74,9 @@ DOCKERFILE_ERROR = {
     203 :'Syntaxe des arguments: argument1 argument2 …',
     204 :'Syntaxe des arguments: ["argument1", "argument2" …]',
     205 :'Nombre d’arguments:{nombre} | Autorisés : Min:{min}, Max:{max}',
-    
+    206 :'Option: {opt} | Option inconnue',
+    207 :'Option: {opt} | Option Incompatible avec l\'instruction',
+
     #Other errors messages
     221 :'DOCKERFILE | Erreur - Instruction {inst} non spécifiée',
     222 :'DOCKERFILE | Erreur - La première instruction doit être FROM',

@@ -3,7 +3,9 @@ import re
 import config as config
 
 #pyparsing imports
-from pyparsing import *
+from pyparsing import ParserElement, ParseFatalException
+from pyparsing import Literal, Group, Regex, White, ZeroOrMore, Optional, lineno
+from pyparsing import stringStart, stringEnd, lineStart, lineEnd, SkipTo
 
 class DockerfileParser:
     def __init__(self):
@@ -101,42 +103,24 @@ class DockerfileParser:
             if (not minArg <= nbArgs <= maxArg):
                 raise ParseFatalException(config.DOCKERFILE_ERROR[205].format(nombre=nbArgs, min=minArg, max=maxArg), loc=loc)
   
-        def opt_parse(strng, loc, toks):
-            """Check if the option exist and if she's correct for the current instruction"""
-            
-            option = config.OPTIONAL_OPTION_CONFIG[toks[0]]
-            if not option:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[206].format(opt=toks[0]), loc=loc)
-            if self.currentInstructionName not in option:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[207].format(opt=toks[0]), loc=loc)
-
-
-        def opt_inst_parse(strng, loc, toks):
-            """Check if the optional instruction is allowed for the current instruction"""
-            pass
-
         #INIT
         ParserElement.setDefaultWhitespaceChars(" \t")
 
         #
         # TERMINALS
         #
-        INST = Regex(r'([A-Z]+)(?<!\s)').setName('Instruction').setParseAction(instructions_parse)
-        OPT = Regex(r'--[a-z]+=').setName('Option').setParseAction(opt_parse)
-
+        INST = Regex(r'\S+').setParseAction(instructions_parse)
         STR = Regex(r'\"(.+?)\"').setName("chaîne de caractère")
-        NUM = Regex(r'[0-9]+')
-
         ARG = Regex(r'\S+').setName("argument")
 
         SEP = White(' ', min=1).setName("espace").suppress()
         EOL = lineEnd().setName("fin de ligne").suppress()
         COM = Regex(r'#.*').suppress()
      
+
         OH = Literal('[').suppress()
         CH = Literal(']').suppress()
         CO = Literal(',').suppress()
-        EQ = Literal('=')    
 
         #
         # NO TERMINALS
@@ -150,7 +134,7 @@ class DockerfileParser:
         t_args_list.setName('argument1 argument2 …')
         t_args_list.setParseAction(args_list_parse)
         
-        t_args = (t_args_table | t_args_list)
+        t_args = SEP - (t_args_table | t_args_list)
         t_args.setParseAction(args_num_parse)
 
         #Multiple lines separator
@@ -158,15 +142,9 @@ class DockerfileParser:
         t_args_list.ignore(continuation)
         t_args_table.ignore(continuation)
 
-        t_opt = OPT - ARG
-        t_opt.setParseAction(opt_parse)
 
-        t_opt_inst = INST - ARG
 
-        #instruction
-        instruction = INST - Group(Optional(t_opt)) - Group(t_args) - Group(Optional(t_opt_inst))
+        #instruction grammar
+        instruction = (stringStart - (COM | Optional(INST - Group(t_args))) - EOL - stringEnd()).setFailAction(error)
 
-        #line grammar
-        line = (stringStart - (COM | Optional(instruction)) - EOL - stringEnd()).setFailAction(error)
-
-        return line
+        return instruction
