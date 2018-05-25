@@ -22,7 +22,8 @@ INSTRUCTION_CONFIG_LIST = {
     'VOLUME'    : [3, 1, max], 
     'WORKDIR'   : [3, 1, 1],
     'LABEL'     : [1, 1, max],
-    'USER'      : [1, 1, max]
+    'USER'      : [1, 1, max],
+    'ARG'       : [1, 1, 1]
 }
 
 #Optional instructions after main instruction arguments
@@ -81,7 +82,7 @@ DOCKERFILE_ERROR = {
 
     #Other errors messages
     221 :'DOCKERFILE | Erreur - Instruction {inst} non spécifiée ou incorrecte',
-    222 :'DOCKERFILE | Erreur - La première instruction doit être FROM',
+    222 :'DOCKERFILE | Erreur - Instruction {inst} : L\'instruction FROM doit être spécifiée en première',
     223 :'DOCKERFILE | Erreur - Instruction {inst}: "{fichiers}" Fichiers spécifiés introuvables',
     224 :'DOCKERFILE | Erreur - EXPOSE: Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})'
 }

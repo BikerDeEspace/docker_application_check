@@ -10,12 +10,12 @@ import re
 #------------------
 #verif_dockerfile
 #------------------
-def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
+def verif_dockerfile(path='./', container_port=None):
     """Fonction permettant de vérifier un fichier Dockerfile"""
 
     errors = list()
     dockerfile = dfp.DockerfileParser()
-    dockerfile.parse(path, filename)
+    dockerfile.parse(path)
 
     if(dockerfile.hasError()):
         errors.extend(dockerfile.error)
@@ -37,8 +37,8 @@ def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
         print(parseResult[i])
 
 
-        if i == 0 and instruction != 'FROM':
-            errors.append(config.DOCKERFILE_ERROR[222])
+        if not instruction_from and (instruction != 'FROM' and instruction != 'ARG'):
+            errors.append(config.DOCKERFILE_ERROR[222].format(inst=instruction))
         
         if instruction == 'FROM':
             instruction_from = True
@@ -69,7 +69,7 @@ def verif_docker_compose():
     """Fonction permettant de vérifier un fichier docker-compose.yml"""
     errors = list()
 
-    errors.extend(verif_dockerfile('./exemples/', 'Dockerfile'))
+    errors.extend(verif_dockerfile('./exemples/'))
 
     process = Popen(['docker-compose', 'config', '--quiet'], stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()

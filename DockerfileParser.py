@@ -23,7 +23,7 @@ class DockerfileParser:
         else:
             return False
 
-    def parse(self, FilePath='./', Filename = 'Dockerfile'):
+    def parse(self, FilePath='./', Filename=''):
         """Parse
         
         Parsing of a Dockerfile file
@@ -38,37 +38,40 @@ class DockerfileParser:
         # To get all errors, we need to parse the file line by line
         def getlines(file):
             """Generator - Get lines of the file with continuation char"""
+            self.line_counter = 0
             str_table = list()
-            lines = file.readlines()
-            for line in lines:
+            for line in file.readlines():
+                self.line_counter += 1
                 str_table.append(line)
                 if not re.fullmatch(r".*\s\\\s*\n", line):
                     yield " ".join(str_table)
                     str_table.clear()
 
-        self.file = FilePath + Filename
+        #Check Dockerfile default names
+        gen = (name for name in config.DOCKERFILE_FILENAMES if os.path.exists(FilePath + name))
+        self.file = FilePath + next(gen, Filename)
 
         if not os.path.exists(self.file):
             self.error.append(config.DOCKERFILE_ERROR[200].format(chemin=self.file))
         else:
+            #Parsing line by line
             with open(self.file, 'r') as file:
                 for line in getlines(file):
                     try:
-                        result = self.grammar.parseString(line)
-                        if result:
-                            self.fileparsed.append(result)
+                        parseLine = self.grammar.parseString(line)
+                        if parseLine:
+                            self.fileparsed.append(parseLine)
                     except ParseFatalException as e:
                         self.error.append(str(e.msg))
                         
     def dockerfile_instruction_grammar(self):
         """dockerfile_instruction_grammar"""
-
         #
         # Fail Action - Error template - Line / Col / Instruction 
         #
         def error(s, loc, expr, error):
             """Main error template"""
-            raise ParseFatalException(config.DOCKERFILE_ERROR[210].format(ligne=0, colonne=error.loc, inst=self.currentInstructionName, erreur=error.msg))
+            raise ParseFatalException(config.DOCKERFILE_ERROR[210].format(ligne=self.line_counter, colonne=error.loc, inst=self.currentInstructionName, erreur=error.msg))
 
         #
         # Parse Action (Basic verification)
@@ -129,7 +132,6 @@ class DockerfileParser:
         STR = Regex(r'\"((.|\s)+?)\"').setName("chaîne de caractère")
         ARG = Regex(r'\S+').setName("argument")
 
-        SEP = White(' ', min=1).setName("espace").suppress()
         EOL = lineEnd().setName("fin de ligne").suppress()
         COM = Regex(r'#.*').suppress()
      
@@ -153,7 +155,7 @@ class DockerfileParser:
         t_args.setParseAction(args_num_parse)
 
         #Multiple lines separator
-        continuation = '\\' - lineEnd()
+        continuation = '\\' - EOL
 
         #Optional elements
         t_opt = OneOrMore(OPT - Group(ARG))
