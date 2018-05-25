@@ -1,29 +1,17 @@
-
-FROM      node:8.9-slim
-
-RUN --chown=bin apt-get update -qq && apt-get install -qy \ 
-    ca-certificates \
-    bzip2 \
-    curl \
-    libfontconfig \
-    --no-install-recommends
-
-ADD --chown=bin . /app
+FROM microsoft/aspnetcore-build:2.0
 WORKDIR /app
-CMD ["/app/tests.sh"]
 
-COPY --chown=55:mygroup files* \
-/somedir/
-COPY --chown=bin files* /somedir/
-COPY --chown=1 files* /somedir/
-COPY --chown=10:11 files* /somedir/
+# Copy csproj and restore as distinct layers
+COPY *.csproj ./
+RUN dotnet restore
 
+# Copy everything else and build
+COPY . ./
+RUN dotnet publish -c \ 
+    Release -o out
 
-LABEL com.example.label-with-value="foo"
-LABEL version="1.0"
-
-#DON'T PASS
-LABEL description="This text illustrates \
-that label-values can span multiple lines."
-LABEL "com.example.vendor"="ACME Incorporated"
-RUN "yarn global add phantomjs-prebuilt"
+# Build runtime image
+FROM microsoft/aspnetcore:2.0
+WORKDIR /app
+COPY --from=build-env /app/out .
+ENTRYPOINT ["dotnet", "aspnet app.dll"]

@@ -1,15 +1,12 @@
-version: "3"
+version: "3.3"
 services:
-  # Main application (PHP / Apache)
-  app:
-    build:
-      context: 1
-      dockerfile: Dockerfile-alternate
-      args:
-        buildno: 1
-    ports:
-      # Host : Container
-      - "80:80"
-  # Database (Mysql)
-  db:
-    build: ./bdd
+  redis:
+    image: redis:latest
+    configs:
+      - my_config
+      - my_other_config
+configs:
+  my_config:
+    file: ./my_config.txt
+  my_other_config:
+    external: true

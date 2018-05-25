@@ -19,9 +19,10 @@ INSTRUCTION_CONFIG_LIST = {
     'EXPOSE'    : [1, 1, max], 
     'CMD'       : [3, 1, max], 
     'ENTRYPOINT': [3, 1, 3], 
-    'VOLUME'    : [3, 1, 1], 
+    'VOLUME'    : [3, 1, max], 
     'WORKDIR'   : [3, 1, 1],
-    'LABEL'     : [1, 1, max]
+    'LABEL'     : [1, 1, max],
+    'USER'      : [1, 1, max]
 }
 
 #Optional instructions after main instruction arguments
@@ -37,7 +38,8 @@ OPTIONAL_INSTRUCTION_CONFIG = {
 #Optional options before main instruction arguments
 #OptionName : []
 OPTIONAL_OPTION_CONFIG = {
-    '--chown=' : ['COPY', 'ADD']
+    '--chown='  : ['COPY', 'ADD'],
+    '--from='   : ['COPY']
 }
 
 #
@@ -78,8 +80,24 @@ DOCKERFILE_ERROR = {
     207 :'Option: {opt} | Option Incompatible avec l\'instruction',
 
     #Other errors messages
-    221 :'DOCKERFILE | Erreur - Instruction {inst} non spécifiée',
+    221 :'DOCKERFILE | Erreur - Instruction {inst} non spécifiée ou incorrecte',
     222 :'DOCKERFILE | Erreur - La première instruction doit être FROM',
     223 :'DOCKERFILE | Erreur - Instruction {inst}: "{fichiers}" Fichiers spécifiés introuvables',
     224 :'DOCKERFILE | Erreur - EXPOSE: Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})'
 }
+
+#
+# FILENAMES
+#
+
+DOCKER_COMPOSE_FILENAMES = [
+    "docker-compose.yml", 
+    "docker-compose.yaml", 
+    "fig.yml", 
+    "fig.yaml"
+]
+
+DOCKERFILE_FILENAMES = [
+    "Dockerfile",
+    "dockerfile"
+]

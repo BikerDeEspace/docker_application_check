@@ -33,29 +33,32 @@ class DockerfileParser:
         Filename -- Dockerfile filename (Dockerfile by default)
 
         """
-        self.error = list()
-        self.file = FilePath + Filename
 
         # By default Pyparsing stops when he detect any error 
-        # To get all errors we need to parse the file line by line
-        if os.path.exists(self.file):
-            with open(self.file, 'r') as file:
-                lines = file.readlines()
-                string = ''
-                self.counter = 0
-                for line in lines:
-                    self.counter = self.counter + 1
-                    string += line.strip(' ')
-                    if not re.fullmatch(r".*\s\\\s*\n", line):
-                        try:
-                            result = self.grammar.parseString(string)
-                            if result:
-                                self.fileparsed.append(result)
-                        except ParseFatalException as e:
-                            self.error.append(str(e.msg))
-                        string = ''
-        else:
+        # To get all errors, we need to parse the file line by line
+        def getlines(file):
+            """Generator - Get lines of the file with continuation char"""
+            str_table = list()
+            lines = file.readlines()
+            for line in lines:
+                str_table.append(line)
+                if not re.fullmatch(r".*\s\\\s*\n", line):
+                    yield " ".join(str_table)
+                    str_table.clear()
+
+        self.file = FilePath + Filename
+
+        if not os.path.exists(self.file):
             self.error.append(config.DOCKERFILE_ERROR[200].format(chemin=self.file))
+        else:
+            with open(self.file, 'r') as file:
+                for line in getlines(file):
+                    try:
+                        result = self.grammar.parseString(line)
+                        if result:
+                            self.fileparsed.append(result)
+                    except ParseFatalException as e:
+                        self.error.append(str(e.msg))
                         
     def dockerfile_instruction_grammar(self):
         """dockerfile_instruction_grammar"""
@@ -65,7 +68,7 @@ class DockerfileParser:
         #
         def error(s, loc, expr, error):
             """Main error template"""
-            raise ParseFatalException(config.DOCKERFILE_ERROR[210].format(ligne=self.counter, colonne=error.loc, inst=self.currentInstructionName, erreur=error.msg))
+            raise ParseFatalException(config.DOCKERFILE_ERROR[210].format(ligne=0, colonne=error.loc, inst=self.currentInstructionName, erreur=error.msg))
 
         #
         # Parse Action (Basic verification)
@@ -104,10 +107,9 @@ class DockerfileParser:
         def opt_parse(strng, loc, toks):
             """Check if the option exist and if she's correct for the current instruction"""
             
-            option = config.OPTIONAL_OPTION_CONFIG[toks[0]]
-            if not option:
+            if toks[0] not in config.OPTIONAL_OPTION_CONFIG:
                 raise ParseFatalException(config.DOCKERFILE_ERROR[206].format(opt=toks[0]), loc=loc)
-            if self.currentInstructionName not in option:
+            elif self.currentInstructionName not in config.OPTIONAL_OPTION_CONFIG[toks[0]]:
                 raise ParseFatalException(config.DOCKERFILE_ERROR[207].format(opt=toks[0]), loc=loc)
 
 
@@ -124,9 +126,7 @@ class DockerfileParser:
         INST = Regex(r'([A-Z]+)(?<!\s)').setName('Instruction').setParseAction(instructions_parse)
         OPT = Regex(r'--[a-z]+=').setName('Option').setParseAction(opt_parse)
 
-        STR = Regex(r'\"(.+?)\"').setName("chaîne de caractère")
-        NUM = Regex(r'[0-9]+')
-
+        STR = Regex(r'\"((.|\s)+?)\"').setName("chaîne de caractère")
         ARG = Regex(r'\S+').setName("argument")
 
         SEP = White(' ', min=1).setName("espace").suppress()
@@ -135,8 +135,7 @@ class DockerfileParser:
      
         OH = Literal('[').suppress()
         CH = Literal(']').suppress()
-        CO = Literal(',').suppress()
-        EQ = Literal('=')    
+        CO = Literal(',').suppress() 
 
         #
         # NO TERMINALS
@@ -155,18 +154,18 @@ class DockerfileParser:
 
         #Multiple lines separator
         continuation = '\\' - lineEnd()
-        t_args_list.ignore(continuation)
-        t_args_table.ignore(continuation)
 
-        t_opt = OPT - ARG
+        #Optional elements
+        t_opt = OneOrMore(OPT - Group(ARG))
         t_opt.setParseAction(opt_parse)
 
-        t_opt_inst = INST - ARG
+        t_opt_inst = OneOrMore(INST - Group(ARG))
 
         #instruction
         instruction = INST - Group(Optional(t_opt)) - Group(t_args) - Group(Optional(t_opt_inst))
 
         #line grammar
         line = (stringStart - (COM | Optional(instruction)) - EOL - stringEnd()).setFailAction(error)
+        line.ignore(continuation)
 
         return line

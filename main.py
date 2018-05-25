@@ -36,6 +36,7 @@ def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
         #DEBUG
         print(parseResult[i])
 
+
         if i == 0 and instruction != 'FROM':
             errors.append(config.DOCKERFILE_ERROR[222])
         
@@ -62,19 +63,20 @@ def verif_dockerfile(path='./', filename='Dockerfile', container_port=None):
 
 #------------------
 #verif_docker_compose
+#Supported filenames: docker-compose.yml, docker-compose.yaml, fig.yml, fig.yaml
 #------------------
 def verif_docker_compose():
     """Fonction permettant de vérifier un fichier docker-compose.yml"""
     errors = list()
 
-    errors.extend(verif_dockerfile('./exemples/'))
+    errors.extend(verif_dockerfile('./exemples/', 'Dockerfile'))
 
-    """
     process = Popen(['docker-compose', 'config', '--quiet'], stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
 
     if stderr:
         #TODO Extract errors
+        print('++DOCKER COMPOSE ERR++')
         print(stderr)
     else:
         print(stdout)
@@ -87,8 +89,7 @@ def verif_docker_compose():
 
             for serviceName in services:
                 print(services[serviceName])
-        
-        """
+
             
     return errors  
 
@@ -118,7 +119,7 @@ def main():
     #Checking file docker-compose.yml
     errors.extend(verif_docker_compose())
 
-    #Check if they are no errors
+    """ #Check if they are no errors
     if not errors:
         #Exec docker-compose up command
         process = Popen(['docker-compose', 'up', '-d'], stdout=PIPE, stderr=PIPE)
@@ -131,11 +132,12 @@ def main():
         else:
             print(stdout)
             #Check the logs of each created container
-            errors.extend(verif_logs())
+            errors.extend(verif_logs()) """
     
     #Print errors and write it in a new log file
+    print('++ERR++')
     for error in errors:
         print(error)
         
-
-main()
+if __name__ == '__main__':
+    main()
