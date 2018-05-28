@@ -82,9 +82,10 @@ DOCKERFILE_ERROR = {
 
     #Other errors messages
     221 :'DOCKERFILE | Erreur - Instruction {inst} non spécifiée ou incorrecte',
-    222 :'DOCKERFILE | Erreur - Instruction {inst} : L\'instruction FROM doit être spécifiée en première',
+    222 :'DOCKERFILE | Erreur - Instruction {inst}: L\'instruction FROM doit être spécifiée en première',
     223 :'DOCKERFILE | Erreur - Instruction {inst}: "{fichiers}" Fichiers spécifiés introuvables',
-    224 :'DOCKERFILE | Erreur - EXPOSE: Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})'
+    224 :'DOCKERFILE | Erreur - Instruction {inst}: Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})',
+    225 :'DOCKERFILE | Erreur - Instruction {inst}: Port:{expose_port} syntaxe incorecte'
 }
 
 #

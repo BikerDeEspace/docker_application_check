@@ -112,7 +112,7 @@ class DockerfileParser:
             
             if toks[0] not in config.OPTIONAL_OPTION_CONFIG:
                 raise ParseFatalException(config.DOCKERFILE_ERROR[206].format(opt=toks[0]), loc=loc)
-            elif self.currentInstructionName not in config.OPTIONAL_OPTION_CONFIG[toks[0]]:
+            if self.currentInstructionName not in config.OPTIONAL_OPTION_CONFIG[toks[0]]:
                 raise ParseFatalException(config.DOCKERFILE_ERROR[207].format(opt=toks[0]), loc=loc)
 
 
