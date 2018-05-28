@@ -1,6 +1,7 @@
 import DockerfileParser as dfp
 import config as config
 
+from time import gmtime, strftime
 from subprocess import  Popen, PIPE
 
 import yaml
@@ -68,16 +69,16 @@ def verif_dockerfile(path='./', container_port=None):
 
     return errors
 
-#------------------
+#--------------------
 #verif_docker_compose
 #Supported filenames: docker-compose.yml, docker-compose.yaml, fig.yml, fig.yaml
-#------------------
+#--------------------
 def verif_docker_compose():
     """Fonction permettant de vérifier un fichier docker-compose.yml"""
     errors = list()
 
     #Check syntax and main logic of docker-compose file
-    process = Popen(['docker-compose', 'config', '--quiet'], stdout=PIPE, stderr=PIPE)
+    process = Popen(['docker-compose', '-f', 'exemples/docker-compose.yml', 'config', '--quiet'], stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
 
     #if errors
@@ -88,7 +89,7 @@ def verif_docker_compose():
     else: 
         #If no errors check docker-compose, extract main infos & check dockerfiles
         print('++DOCKER COMPOSE++')
-        with open("docker-compose.yml", 'r') as stream:
+        with open("exemples/docker-compose.yml", 'r') as stream:
             data_loaded = yaml.load(stream)
             services = data_loaded['services']
 
@@ -98,9 +99,9 @@ def verif_docker_compose():
             
     return errors  
 
-#------------------
+#--------------------
 #verif_logs
-#------------------
+#--------------------
 def verif_logs():
     """Fonction permettant de vérifier les logs d'un conteneur"""
     errors = list()
@@ -114,9 +115,9 @@ def verif_logs():
     #FIN verif_logs
     return errors
 
-#------------------
+#--------------------
 # Main
-#------------------
+#--------------------
 def main():
     """Fonction principale du script de vérification"""
     errors = list()
@@ -124,9 +125,9 @@ def main():
     #DEBUG
     errors.extend(verif_dockerfile('./exemples/'))
 
-    """
+    
     #Checking file docker-compose.yml
-    #errors.extend(verif_docker_compose())
+    errors.extend(verif_docker_compose())
 
     #Check if they are no errors
     if not errors:
@@ -142,9 +143,17 @@ def main():
             print(stdout)
             #Check the logs of each created container
             errors.extend(verif_logs()) 
-    """
 
-    #Print errors and write it in a new log file
+    #Write errors in a log file 
+    # - filename : %Y-%m-%d_%H-%M-%S
+    """ f = open('logs/{time}.txt'.format(
+        time=strftime("%Y-%m-%d_%H-%M-%S", gmtime())
+    ),'w')
+
+    f.writelines('\n'.join(errors))
+    f.close() """
+
+    #Print errors
     print('++ERR++')
     for error in errors:
         print(error)
