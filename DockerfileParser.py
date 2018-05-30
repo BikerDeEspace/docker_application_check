@@ -2,6 +2,8 @@ import os
 import re
 import config as config
 
+from pathlib import Path
+
 #pyparsing imports
 from pyparsing import *
 
@@ -48,8 +50,8 @@ class DockerfileParser:
                     str_table.clear()
 
         #Check Dockerfile default names
-        gen = (name for name in config.DOCKERFILE_FILENAMES if os.path.exists(FilePath + name))
-        self.file = FilePath + next(gen, Filename)
+        gen = (name for name in config.DOCKERFILE_FILENAMES if (FilePath / name).exists)
+        self.file = FilePath / next(gen, Filename)
 
         if not os.path.exists(self.file):
             self.error.append(config.DOCKERFILE_ERROR[200].format(chemin=self.file))
@@ -60,7 +62,7 @@ class DockerfileParser:
                     try:
                         parseLine = self.grammar.parseString(line)
                         if parseLine:
-                            self.fileparsed.append(parseLine)
+                            self.fileparsed.append([self.line_counter, parseLine])
                     except ParseFatalException as e:
                         self.error.append(str(e.msg))
                         
@@ -116,10 +118,6 @@ class DockerfileParser:
                 raise ParseFatalException(config.DOCKERFILE_ERROR[207].format(opt=toks[0]), loc=loc)
 
 
-        def opt_inst_parse(strng, loc, toks):
-            """Check if the optional instruction is allowed for the current instruction"""
-            pass
-
         #INIT
         ParserElement.setDefaultWhitespaceChars(" \t")
 
@@ -130,7 +128,7 @@ class DockerfileParser:
         OPT = Regex(r'--[a-z]+=').setName('Option').setParseAction(opt_parse)
 
         STR = Regex(r'\"((.|\s)+?)\"').setName("chaîne de caractère")
-        ARG = Regex(r'\S+').setName("argument")
+        ARG = Regex(r'(?:(?!\bAS\b)\S)+').setName("argument")
 
         EOL = lineEnd().setName("fin de ligne").suppress()
         COM = Regex(r'#.*').suppress()
@@ -161,13 +159,14 @@ class DockerfileParser:
         t_opt = OneOrMore(OPT - Group(ARG))
         t_opt.setParseAction(opt_parse)
 
-        t_opt_inst = OneOrMore(INST - Group(ARG))
+        t_opt_inst = Literal('AS') - Group(ARG)
 
         #instruction
         instruction = INST - Group(Optional(t_opt)) - Group(t_args) - Group(Optional(t_opt_inst))
 
         #line grammar
         line = (stringStart - (COM | Optional(instruction)) - EOL - stringEnd()).setFailAction(error)
+        
         line.ignore(continuation)
 
         return line

@@ -4,6 +4,8 @@ import config as config
 from time import gmtime, strftime
 from subprocess import  Popen, PIPE
 
+from pathlib import Path
+
 import yaml
 import os
 import re
@@ -13,7 +15,7 @@ import glob
 #------------------
 #verif_dockerfile
 #------------------
-def verif_dockerfile(path='./', container_port=None):
+def verif_dockerfile(path='./', service='', container_port=None):
     """Fonction permettant de vérifier un fichier Dockerfile"""
 
     errors = list()
@@ -23,24 +25,37 @@ def verif_dockerfile(path='./', container_port=None):
     if(dockerfile.hasError()):
         errors.extend(dockerfile.error)
 
-    parseResult = dockerfile.fileparsed
-    
+    error_template = config.DOCKERFILE_ERROR[220]
+
     instruction_from = False
     instruction_expose = False
+
     #Foreach instruction
-    # -- Inst[i][0] = Instruction name (never null)
-    # -- Inst[i][1] = arguments list (never null)
-    for i in range(0, len(parseResult)):
-        instruction = parseResult[i][0]
-        opt = parseResult[i][1]
-        params = parseResult[i][2]
-        opt_instruction = parseResult[i][3]
+    # -- Inst[i][0] = Instruction line (never null)
+    # -- Inst[i][1] = instruction [
+    #       -- [0] InstructionName
+    #       -- [1] OptionsList
+    #       -- [2] ArgumentsList
+    #       -- [3] OptionalInstructionsList
+    #    ] (never null)
+    for i in range(0, len(dockerfile.fileparsed)):
+        line = str(dockerfile.fileparsed[i][0])
+        complete_instruction = dockerfile.fileparsed[i][1]
+
+        instruction = complete_instruction[0]
+        opt = complete_instruction[1]
+        params = complete_instruction[2]
+        opt_instruction = complete_instruction[3]
 
         #DEBUG
-        print(parseResult[i])
+        print(line ,'-', complete_instruction)
 
         if not instruction_from and (instruction != 'FROM' and instruction != 'ARG'):
-            errors.append(config.DOCKERFILE_ERROR[222].format(inst=instruction))
+            errors.append(error_template.format(
+                ligne=line, 
+                inst=instruction, 
+                erreur=config.DOCKERFILE_ERROR[222])
+            )
         
         if instruction == 'FROM':
             instruction_from = True
@@ -48,55 +63,83 @@ def verif_dockerfile(path='./', container_port=None):
         elif instruction == 'EXPOSE':
             instruction_expose = True
             #Check if param syntax is correct (80[/tcp])
-            if not re.fullmatch(r'([0-9]+)(\/(tcp|udp))?', params[0]):
-                errors.append(config.DOCKERFILE_ERROR[225].format(inst=instruction, expose_port=params[0]))
+            if not re.fullmatch(r'[0-9]+(\/(tcp|udp))?', params[0]):
+                errors.append(error_template.format(
+                    ligne=line, 
+                    inst=instruction, 
+                    erreur=config.DOCKERFILE_ERROR[225].format(expose_port=params[0]))
+                )
             #Check if expose ports equals ports in docker-compose.yml file
-            if container_port and (container_port not in params):
-                errors.append(config.DOCKERFILE_ERROR[224].format(expose_port=params))
+            elif container_port and (container_port not in params):
+                errors.append(error_template.format(
+                    ligne=line, 
+                    inst=instruction,
+                    erreur=config.DOCKERFILE_ERROR[224].format(expose_port=params))
+                )
         elif instruction == 'ADD' or instruction == 'COPY':
             #Check if files or folders exists
-            if not glob.glob(params[0]):
-                errors.append(config.DOCKERFILE_ERROR[223].format(inst=instruction, fichiers=params[0]))
-        elif instruction == 'VOLUME':
-
-            pass
+            if not (path / params[0]).exists:
+                errors.append(error_template.format(
+                    ligne=line, 
+                    inst=instruction, 
+                    erreur=config.DOCKERFILE_ERROR[223].format(fichiers=params[0]))
+                )
 
     #Required Instructions
     if not instruction_from:
-        errors.append(config.DOCKERFILE_ERROR[221].format(inst='FROM'))
+        errors.append(error_template.format(
+            ligne='..', 
+            inst='FROM',
+            erreur=config.DOCKERFILE_ERROR[221])
+        )
     if not instruction_expose:
-        errors.append(config.DOCKERFILE_ERROR[221].format(inst='EXPOSE'))
-
+        errors.append(error_template.format(
+            ligne='..', 
+            inst='EXPOSE',
+            erreur=config.DOCKERFILE_ERROR[221])
+        )
     return errors
 
 #--------------------
 #verif_docker_compose
 #Supported filenames: docker-compose.yml, docker-compose.yaml, fig.yml, fig.yaml
 #--------------------
-def verif_docker_compose():
+def verif_docker_compose(path):
     """Fonction permettant de vérifier un fichier docker-compose.yml"""
     errors = list()
 
+    gen = (name for name in config.DOCKER_COMPOSE_FILENAMES if (path / name).exists)
+    file = path / next(gen, None)
+
     #Check syntax and main logic of docker-compose file
-    process = Popen(['docker-compose', '-f', 'exemples/docker-compose.yml', 'config', '--quiet'], stdout=PIPE, stderr=PIPE)
+    process = Popen([
+        'docker-compose', '-f', str(file), 'config', '--quiet'
+    ], stdout=PIPE, stderr=PIPE)
+
     stdout, stderr = process.communicate()
 
     #if errors
     if stderr:
-        #TODO Extract errors (Function ?)
-        print('++DOCKER COMPOSE ERR++')
-        print(stderr)
+        errors.append(config.DOCKER_COMPOSER_ERROR[110].format(erreur=stderr.decode('utf-8')))
     else: 
         #If no errors check docker-compose, extract main infos & check dockerfiles
-        print('++DOCKER COMPOSE++')
-        with open("exemples/docker-compose.yml", 'r') as stream:
+        with open(file, 'r') as stream:
+
             data_loaded = yaml.load(stream)
             services = data_loaded['services']
 
             for serviceName in services:
-                print('++',serviceName,' ', services[serviceName])
+                service_content = services[serviceName]
+                #Check if exist build configuration
+                if 'build' in service_content:
+                    build = service_content['build']
+                    #Check if build is not in short version
+                    if 'context' in build:
+                        errors.extend(verif_dockerfile(path / build['context']))
+                    else:
+                        errors.extend(verif_dockerfile(path / build))
 
-            
+    
     return errors  
 
 #--------------------
@@ -122,27 +165,26 @@ def main():
     """Fonction principale du script de vérification"""
     errors = list()
 
-    #DEBUG
-    errors.extend(verif_dockerfile('./exemples/'))
+    docker_compose_path = config.DOCKER_PROJECTS_PATH / input('Enter docker-compose file folder: ')
 
-    
+
     #Checking file docker-compose.yml
-    errors.extend(verif_docker_compose())
+    errors.extend(verif_docker_compose(docker_compose_path))
 
     #Check if they are no errors
     if not errors:
-        #Exec docker-compose up command
+        """ #Exec docker-compose up command
         process = Popen(['docker-compose', 'up', '-d'], stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
 
         #Check if they are no errors
         if stderr:
             #TODO  Extract errors (Function ?)
-            print('ERR:',stderr)
+            errors.append(stderr.decode('utf-8'))
         else:
             print(stdout)
             #Check the logs of each created container
-            errors.extend(verif_logs()) 
+            errors.extend(verif_logs())  """
 
     #Write errors in a log file 
     # - filename : %Y-%m-%d_%H-%M-%S

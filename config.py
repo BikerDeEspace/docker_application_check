@@ -1,11 +1,22 @@
 import sys
+from pathlib import Path
 
 max = sys.maxsize
+
+DOCKER_PROJECTS_PATH = Path(r"C:\Users\llegrand\Documents\DockerProjects")
 
 #
 # INSTRUCTIONS
 #
 
+
+#Optional instruction before main instruction
+OPTIONAL_INSTRUCTION = {
+    'ONBUILD'
+    'HEALTHCHECK'
+}
+
+#Main instruction
 #InstructionName : [ArgumentsFormCode, ArgumentsNumMin, ArgumentsNumMax]
 #ArgumentsFormCode :
 # -- 1: Simple List forms (Ex: arg1 arg2)
@@ -23,7 +34,9 @@ INSTRUCTION_CONFIG_LIST = {
     'WORKDIR'   : [3, 1, 1],
     'LABEL'     : [1, 1, max],
     'USER'      : [1, 1, max],
-    'ARG'       : [1, 1, 1]
+    'ARG'       : [1, 1, 1],
+    'SHELL'     : [2, 1, max],
+    'ENV'       : [1, 1, max]
 }
 
 #Optional instructions after main instruction arguments
@@ -40,7 +53,12 @@ OPTIONAL_INSTRUCTION_CONFIG = {
 #OptionName : []
 OPTIONAL_OPTION_CONFIG = {
     '--chown='  : ['COPY', 'ADD'],
-    '--from='   : ['COPY']
+    '--from='   : ['COPY'],
+
+    '--interval=': ['HEALTHCHECK'],
+    '--timeout=': ['HEALTHCHECK'],
+    '--start-period=': ['HEALTHCHECK'],
+    '--retries=': ['HEALTHCHECK']
 }
 
 #
@@ -54,7 +72,7 @@ OPTIONAL_OPTION_CONFIG = {
 DOCKER_COMPOSER_ERROR = {
     100 :'DOCKER COMPOSE | Erreur - Fichier introuvable : {chemin}', 
     #Main syntax error template
-    110 :'DOCKER COMPOSE | Erreur Syntaxe | L:{ligne} {erreur}',
+    110 :'DOCKER COMPOSE | Erreur |\n{erreur}',
     #Syntax errors messages
 
     #Other errors messages
@@ -68,8 +86,9 @@ DOCKER_COMPOSER_ERROR = {
 #22* -- Dockerfile other errors 
 DOCKERFILE_ERROR = {
     200 :'DOCKERFILE | Erreur - Fichier introuvable : {chemin}',
-    #Main syntax error template
-    210 :'DOCKERFILE | Erreur Syntaxe | L:{ligne} C:{colonne} | Instruction "{inst}" | {erreur}',
+
+    #Main syntax template
+    210 :'DOCKERFILE | Erreur | L:{ligne} C:{colonne} | Instruction "{inst}" | {erreur}',
 
     #Syntax errors messages
     201 :'Instruction inconnue',
@@ -81,11 +100,13 @@ DOCKERFILE_ERROR = {
     207 :'Option: {opt} | Option Incompatible avec l\'instruction',
 
     #Other errors messages
-    221 :'DOCKERFILE | Erreur - Instruction {inst} non spécifiée ou incorrecte',
-    222 :'DOCKERFILE | Erreur - Instruction {inst}: L\'instruction FROM doit être spécifiée en première',
-    223 :'DOCKERFILE | Erreur - Instruction {inst}: "{fichiers}" Fichiers spécifiés introuvables',
-    224 :'DOCKERFILE | Erreur - Instruction {inst}: Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})',
-    225 :'DOCKERFILE | Erreur - Instruction {inst}: Port:{expose_port} syntaxe incorecte'
+    220: 'DOCKERFILE | Erreur | L:{ligne} | Instruction "{inst}" | {erreur}',
+    
+    221 :'Instruction non spécifiée ou incorrecte',
+    222 :'Seule l\'instruction ARG est autorisée avant l\'instruction FROM',
+    223 :'{fichiers} Fichiers spécifiés introuvables',
+    224 :'Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})',
+    225 :'Port:{expose_port} syntaxe incorecte'
 }
 
 #

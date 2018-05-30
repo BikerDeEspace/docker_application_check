@@ -1,7 +1,9 @@
 
-FROM microsoft/aspnetcore-build:2.0
-WORKDIR /app
 
+FROM microsoft/aspnetcore-build:2.0
+
+FROM microsoft/aspnetcore-build:2.0 AS test
+WORKDIR /app
 ARG user1=someuser
 # Copy csproj and restore as distinct layers
 COPY *.csproj ./
@@ -12,17 +14,12 @@ COPY . ./
 RUN dotnet publish -c \ 
     Release -o out
 
-RUN
-
 # Build runtime image
 FROM microsoft/aspnetcore:2.0
 WORKDIR /app
 COPY --from=build-env /app/out .
 ENTRYPOINT ["dotnet", "aspnet app.dll"]
 
-EXPOSE 80/tcp
-
-#
 # example Dockerfile for https://docs.docker.com/engine/examples/postgresql_service/
 #
 
@@ -62,8 +59,6 @@ RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/9.3/main/pg_hba.co
 # And add ``listen_addresses`` to ``/etc/postgresql/9.3/main/postgresql.conf``
 RUN echo "listen_addresses='*'" >> /etc/postgresql/9.3/main/postgresql.conf
 
-# Expose the PostgreSQL port
-EXPOSE 5432
 
 # Add VOLUMEs to allow backup of config, logs and databases
 VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
