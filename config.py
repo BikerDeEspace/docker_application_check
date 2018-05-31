@@ -84,7 +84,9 @@ OPTIONAL_INSTRUCTION_CONFIG = {
 #DOCKER COMPOSE
 #Major errors catch by docker-compose config
 DOCKER_COMPOSER_ERROR = {
-    110 :'DOCKER COMPOSE | Erreur |\n{erreur}'
+    110 :'DOCKER COMPOSE | CONFIG | Erreur |\n{erreur}',
+
+    111 :'DOCKER COMPOSE | UP | Erreur | \n{erreur}'
 }
 
 #DOCKERFILE
@@ -104,14 +106,14 @@ DOCKERFILE_ERROR = {
     212 :'Argument: Aucun argument spécifié',
     213 :'Argument: Syntaxe: argument1 argument2 …',
     214 :'Argument: Syntaxe: ["argument1", "argument2" …]',
-    215 :'Argument: Nombre:{nombre} | Autorisés : Min:{min}, Max:{max}',
+    215 :'Argument: Actuel:{nombre} | Autorisés : Min:{min}, Max:{max}',
     216 :'Option: {opt} | Option inconnue',
     217 :'Option: {opt} | Option Incompatible avec l\'instruction',
    
     #script errors messages
     221 :'Instruction: Non spécifiée ou incorrecte',
     222 :'Instruction: ARG ou FROM doit être en première position',
-    223 :'Fichier: {fichiers} Fichiers spécifiés introuvables',
+    223 :'Fichier / Dossier : {fichiers} Fichiers / Dossiers spécifiés introuvables',
     224 :'Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})',
     225 :'Port:{expose_port} syntaxe incorrecte'
 }

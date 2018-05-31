@@ -1,13 +1,20 @@
+#Dockerfile parser
 import DockerfileParser as dfp
+#config file
 import config as config
 
+#Log files names
 from time import gmtime, strftime
+#stderr catching
 from subprocess import  Popen, PIPE
-
+#path manipulation
 from pathlib import Path
 
+#docker-compose file parsing
 import yaml
+#input
 import os
+#regex
 import re
 
 #------------------
@@ -17,24 +24,24 @@ def verif_dockerfile(path='./', service='', container_port=None):
     """Fonction permettant de vérifier un fichier Dockerfile"""
     dockerfile = dfp.DockerfileParser()
     errors = list()
-
     errors.extend(dockerfile.parse(path))
 
-    instruction_from = False
+    instruction_from   = False
     instruction_expose = False
     #Foreach instruction
     # -- Inst[i][0] = Instruction line (never null)
     # -- Inst[i][1] = instruction [
-    #       -- [0] InstructionName
+    #       -- [0] InstructionName (never null)
     #       -- [1] OptionsList
-    #       -- [2] ArgumentsList
+    #       -- [2] ArgumentsList (never null)
     #       -- [3] OptionalInstructionsList
     #    ] (never null)
-    for i in range(0, len(dockerfile.fileparsed)):
+    parsefile = dockerfile.fileparsed
+    for i in range(0, len(parsefile)):
 
         #Current instruction data
-        line_number = str(dockerfile.fileparsed[i][0])
-        complete_instruction = dockerfile.fileparsed[i][1]
+        line_number = str(parsefile[i][0])
+        complete_instruction = parsefile[i][1]
         instruction = complete_instruction[0]
         params = complete_instruction[2]
         #opt = complete_instruction[1]
@@ -66,7 +73,7 @@ def verif_dockerfile(path='./', service='', container_port=None):
                 )
         elif instruction == 'ADD' or instruction == 'COPY':
             #Check if files or folders exists
-            if not (path / params[0]).exists:
+            if not list(path.glob(params[0])):
                 errors.append(inst_error_template.format(
                     erreur=config.DOCKERFILE_ERROR[223].format(fichiers=params[0]))
                 )
@@ -81,7 +88,7 @@ def verif_dockerfile(path='./', service='', container_port=None):
             ligne='..', colonne='..', inst='EXPOSE', erreur=config.DOCKERFILE_ERROR[221]
         ))
     
-    return errors if not errors else config.DOCKERFILE_ERROR[201].format(service=service, erreur="".join(errors))
+    return None if not errors else config.DOCKERFILE_ERROR[201].format(service=service, erreur="".join(errors)) 
 
 #--------------------
 #verif_docker_compose
@@ -122,8 +129,7 @@ def verif_docker_compose(path):
                     else:
                         errors.append(verif_dockerfile(path / build, serviceName))
 
-    
-    return errors  
+    return filter(None, errors)
 
 #--------------------
 #verif_logs
@@ -149,7 +155,7 @@ def main():
     errors = list()
 
     docker_compose_path = config.DOCKER_PROJECTS_PATH / input('Enter docker-compose file folder: ')
-
+    
     #Checking file docker-compose.yml
     errors.extend(verif_docker_compose(docker_compose_path))
 
@@ -157,18 +163,17 @@ def main():
     if not errors:
         #Exec docker-compose up command
 
-        """ 
         #TODO docker-compose up filepath
-        process = Popen(['docker-compose', 'up', '-d'], stdout=PIPE, stderr=PIPE)
+        process = Popen(['docker-compose','-f', str(docker_compose_path), 'up', '-d'], stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
 
         #Check if they are no errors
         if stderr:
-            errors.append(stderr.decode('utf-8'))
+            errors.append(config.DOCKER_COMPOSER_ERROR[111].format(erreur=stderr.decode('utf-8')))
         else:
             print(stdout)
             #Check the logs of each created container
-            errors.extend(verif_logs()) """
+            errors.extend(verif_logs())
 
     if errors:
         #Write errors in a log file 
@@ -181,10 +186,7 @@ def main():
         f.close() """
 
         #Print errors
-        for error in errors:
-            print(error)
-    else:
-        print('Aucune erreur')
+        print("".join(errors))
         
         
 if __name__ == '__main__':
