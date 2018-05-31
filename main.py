@@ -10,26 +10,18 @@ import yaml
 import os
 import re
 
-import glob
-
 #------------------
 #verif_dockerfile
 #------------------
 def verif_dockerfile(path='./', service='', container_port=None):
     """Fonction permettant de vérifier un fichier Dockerfile"""
-
-    errors = list()
     dockerfile = dfp.DockerfileParser()
-    dockerfile.parse(path)
+    errors = list()
 
-    if(dockerfile.hasError()):
-        errors.extend(dockerfile.error)
-
-    error_template = config.DOCKERFILE_ERROR[220]
+    errors.extend(dockerfile.parse(path))
 
     instruction_from = False
     instruction_expose = False
-
     #Foreach instruction
     # -- Inst[i][0] = Instruction line (never null)
     # -- Inst[i][1] = instruction [
@@ -39,24 +31,24 @@ def verif_dockerfile(path='./', service='', container_port=None):
     #       -- [3] OptionalInstructionsList
     #    ] (never null)
     for i in range(0, len(dockerfile.fileparsed)):
-        line = str(dockerfile.fileparsed[i][0])
+
+        #Current instruction data
+        line_number = str(dockerfile.fileparsed[i][0])
         complete_instruction = dockerfile.fileparsed[i][1]
-
         instruction = complete_instruction[0]
-        opt = complete_instruction[1]
         params = complete_instruction[2]
-        opt_instruction = complete_instruction[3]
+        #opt = complete_instruction[1]
+        #opt_instruction = complete_instruction[3]
 
-        #DEBUG
-        print(line ,'-', complete_instruction)
+        #Instruction error template
+        inst_error_template = config.DOCKERFILE_ERROR[202].format(
+            ligne=line_number, colonne='..', inst=instruction, erreur='{erreur}'
+        )
 
         if not instruction_from and (instruction != 'FROM' and instruction != 'ARG'):
-            errors.append(error_template.format(
-                ligne=line, 
-                inst=instruction, 
+            errors.append(inst_error_template.format(
                 erreur=config.DOCKERFILE_ERROR[222])
             )
-        
         if instruction == 'FROM':
             instruction_from = True
             #TODO image checking
@@ -64,41 +56,32 @@ def verif_dockerfile(path='./', service='', container_port=None):
             instruction_expose = True
             #Check if param syntax is correct (80[/tcp])
             if not re.fullmatch(r'[0-9]+(\/(tcp|udp))?', params[0]):
-                errors.append(error_template.format(
-                    ligne=line, 
-                    inst=instruction, 
+                errors.append(inst_error_template.format(
                     erreur=config.DOCKERFILE_ERROR[225].format(expose_port=params[0]))
                 )
             #Check if expose ports equals ports in docker-compose.yml file
             elif container_port and (container_port not in params):
-                errors.append(error_template.format(
-                    ligne=line, 
-                    inst=instruction,
+                errors.append(inst_error_template.format(
                     erreur=config.DOCKERFILE_ERROR[224].format(expose_port=params))
                 )
         elif instruction == 'ADD' or instruction == 'COPY':
             #Check if files or folders exists
             if not (path / params[0]).exists:
-                errors.append(error_template.format(
-                    ligne=line, 
-                    inst=instruction, 
+                errors.append(inst_error_template.format(
                     erreur=config.DOCKERFILE_ERROR[223].format(fichiers=params[0]))
                 )
 
     #Required Instructions
     if not instruction_from:
-        errors.append(error_template.format(
-            ligne='..', 
-            inst='FROM',
-            erreur=config.DOCKERFILE_ERROR[221])
-        )
+        errors.append(config.DOCKERFILE_ERROR[202].format(
+            ligne='..', colonne='..', inst='FROM', erreur=config.DOCKERFILE_ERROR[221]
+        ))
     if not instruction_expose:
-        errors.append(error_template.format(
-            ligne='..', 
-            inst='EXPOSE',
-            erreur=config.DOCKERFILE_ERROR[221])
-        )
-    return errors
+        errors.append(config.DOCKERFILE_ERROR[202].format(
+            ligne='..', colonne='..', inst='EXPOSE', erreur=config.DOCKERFILE_ERROR[221]
+        ))
+    
+    return errors if not errors else config.DOCKERFILE_ERROR[201].format(service=service, erreur="".join(errors))
 
 #--------------------
 #verif_docker_compose
@@ -124,7 +107,6 @@ def verif_docker_compose(path):
     else: 
         #If no errors check docker-compose, extract main infos & check dockerfiles
         with open(file, 'r') as stream:
-
             data_loaded = yaml.load(stream)
             services = data_loaded['services']
 
@@ -134,10 +116,11 @@ def verif_docker_compose(path):
                 if 'build' in service_content:
                     build = service_content['build']
                     #Check if build is not in short version
+                    #Check dockerfile linked to the service
                     if 'context' in build:
-                        errors.extend(verif_dockerfile(path / build['context']))
+                        errors.append(verif_dockerfile(path / build['context'], serviceName))
                     else:
-                        errors.extend(verif_dockerfile(path / build))
+                        errors.append(verif_dockerfile(path / build, serviceName))
 
     
     return errors  
@@ -167,38 +150,42 @@ def main():
 
     docker_compose_path = config.DOCKER_PROJECTS_PATH / input('Enter docker-compose file folder: ')
 
-
     #Checking file docker-compose.yml
     errors.extend(verif_docker_compose(docker_compose_path))
 
     #Check if they are no errors
     if not errors:
-        """ #Exec docker-compose up command
+        #Exec docker-compose up command
+
+        """ 
+        #TODO docker-compose up filepath
         process = Popen(['docker-compose', 'up', '-d'], stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
 
         #Check if they are no errors
         if stderr:
-            #TODO  Extract errors (Function ?)
             errors.append(stderr.decode('utf-8'))
         else:
             print(stdout)
             #Check the logs of each created container
-            errors.extend(verif_logs())  """
+            errors.extend(verif_logs()) """
 
-    #Write errors in a log file 
-    # - filename : %Y-%m-%d_%H-%M-%S
-    """ f = open('logs/{time}.txt'.format(
-        time=strftime("%Y-%m-%d_%H-%M-%S", gmtime())
-    ),'w')
+    if errors:
+        #Write errors in a log file 
+        # - filename : %Y-%m-%d_%H-%M-%S
+        """ f = open('logs/{time}.txt'.format(
+            time=strftime("%Y-%m-%d_%H-%M-%S", gmtime())
+        ),'w') 
 
-    f.writelines('\n'.join(errors))
-    f.close() """
+        f.writelines('\n'.join(errors))
+        f.close() """
 
-    #Print errors
-    print('++ERR++')
-    for error in errors:
-        print(error)
+        #Print errors
+        for error in errors:
+            print(error)
+    else:
+        print('Aucune erreur')
+        
         
 if __name__ == '__main__':
     main()

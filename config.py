@@ -3,13 +3,29 @@ from pathlib import Path
 
 max = sys.maxsize
 
+#
+# FILEPATH
+#
 DOCKER_PROJECTS_PATH = Path(r"C:\Users\llegrand\Documents\DockerProjects")
+
+#
+# FILENAMES
+#
+DOCKER_COMPOSE_FILENAMES = [
+    "docker-compose.yml", 
+    "docker-compose.yaml", 
+    "fig.yml", 
+    "fig.yaml"
+]
+
+DOCKERFILE_FILENAMES = [
+    "Dockerfile",
+    "dockerfile"
+]
 
 #
 # INSTRUCTIONS
 #
-
-
 #Optional instruction before main instruction
 OPTIONAL_INSTRUCTION = {
     'ONBUILD'
@@ -39,17 +55,7 @@ INSTRUCTION_CONFIG_LIST = {
     'ENV'       : [1, 1, max]
 }
 
-#Optional instructions after main instruction arguments
-#InstructionName : [ArgumentsFormCode, ArgumentsNumMin, ArgumentsNumMax]
-#ArgumentsFormCode :
-# -- 1: Simple List forms (Ex: arg1 arg2)
-# -- 2: Table forms (Ex: ["arg1", "arg2"])
-# -- 3: All possible forms
-OPTIONAL_INSTRUCTION_CONFIG = {
-    'AS': [1, 1, 1]
-}
-
-#Optional options before main instruction arguments
+#Options before main instruction arguments
 #OptionName : []
 OPTIONAL_OPTION_CONFIG = {
     '--chown='  : ['COPY', 'ADD'],
@@ -61,66 +67,51 @@ OPTIONAL_OPTION_CONFIG = {
     '--retries=': ['HEALTHCHECK']
 }
 
+#Optional instructions after main instruction arguments
+#InstructionName : [ArgumentsFormCode, ArgumentsNumMin, ArgumentsNumMax]
+#ArgumentsFormCode :
+# -- 1: Simple List forms (Ex: arg1 arg2)
+# -- 2: Table forms (Ex: ["arg1", "arg2"])
+# -- 3: All possible forms
+OPTIONAL_INSTRUCTION_CONFIG = {
+    'AS': [1, 1, 1]
+}
+
 #
 # ERRORS LISTS
 #
 
 #DOCKER COMPOSE
-#1** -- Docker-compose errors
-#11* -- Docker-compose syntax errors
-#12* -- Docker-compose other errors 
+#Major errors catch by docker-compose config
 DOCKER_COMPOSER_ERROR = {
-    100 :'DOCKER COMPOSE | Erreur - Fichier introuvable : {chemin}', 
-    #Main syntax error template
-    110 :'DOCKER COMPOSE | Erreur |\n{erreur}',
-    #Syntax errors messages
-
-    #Other errors messages
-    121 :'DOCKER COMPOSE | Aucun service défini'
-
+    110 :'DOCKER COMPOSE | Erreur |\n{erreur}'
 }
 
 #DOCKERFILE
 #2** -- Dockerfile errors
-#21* -- Dockerfile syntax errors
+#21* -- Dockerfile parser errors
 #22* -- Dockerfile other errors 
 DOCKERFILE_ERROR = {
     200 :'DOCKERFILE | Erreur - Fichier introuvable : {chemin}',
 
-    #Main syntax template
-    210 :'DOCKERFILE | Erreur | L:{ligne} C:{colonne} | Instruction "{inst}" | {erreur}',
+    #Main dockerfile errors template
+    201 :'DOCKERFILE | Erreur | Service "{service}" | {erreur}',
+    #errors template
+    202 :'\n\t - L:{ligne}\t C:{colonne} \t| Instruction "{inst}" \t| {erreur}',
 
-    #Syntax errors messages
-    201 :'Instruction inconnue',
-    202 :'Aucun argument spécifié',
-    203 :'Syntaxe des arguments: argument1 argument2 …',
-    204 :'Syntaxe des arguments: ["argument1", "argument2" …]',
-    205 :'Nombre d’arguments:{nombre} | Autorisés : Min:{min}, Max:{max}',
-    206 :'Option: {opt} | Option inconnue',
-    207 :'Option: {opt} | Option Incompatible avec l\'instruction',
-
-    #Other errors messages
-    220: 'DOCKERFILE | Erreur | L:{ligne} | Instruction "{inst}" | {erreur}',
-    
-    221 :'Instruction non spécifiée ou incorrecte',
-    222 :'Seule l\'instruction ARG est autorisée avant l\'instruction FROM',
-    223 :'{fichiers} Fichiers spécifiés introuvables',
+    #Parser errors messages
+    211 :'Instruction: Instruction inconnue',
+    212 :'Argument: Aucun argument spécifié',
+    213 :'Argument: Syntaxe: argument1 argument2 …',
+    214 :'Argument: Syntaxe: ["argument1", "argument2" …]',
+    215 :'Argument: Nombre:{nombre} | Autorisés : Min:{min}, Max:{max}',
+    216 :'Option: {opt} | Option inconnue',
+    217 :'Option: {opt} | Option Incompatible avec l\'instruction',
+   
+    #script errors messages
+    221 :'Instruction: Non spécifiée ou incorrecte',
+    222 :'Instruction: ARG ou FROM doit être en première position',
+    223 :'Fichier: {fichiers} Fichiers spécifiés introuvables',
     224 :'Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})',
-    225 :'Port:{expose_port} syntaxe incorecte'
+    225 :'Port:{expose_port} syntaxe incorrecte'
 }
-
-#
-# FILENAMES
-#
-
-DOCKER_COMPOSE_FILENAMES = [
-    "docker-compose.yml", 
-    "docker-compose.yaml", 
-    "fig.yml", 
-    "fig.yaml"
-]
-
-DOCKERFILE_FILENAMES = [
-    "Dockerfile",
-    "dockerfile"
-]

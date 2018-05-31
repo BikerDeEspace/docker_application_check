@@ -1,3 +1,0 @@
-DOCKERFILE | Erreur Syntaxe | L:15 C:3 | Instruction "RUN" | Expected {["argument1", "argument2" …] | argument1 argument2 …}
-DOCKERFILE | Erreur - Instruction COPY: "*.csproj" Fichiers spécifiés introuvables
-DOCKERFILE | Erreur - Instruction COPY: "/app/out" Fichiers spécifiés introuvables

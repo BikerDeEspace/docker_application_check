@@ -18,13 +18,6 @@ class DockerfileParser:
         self.error = list()
         self.grammar = self.dockerfile_instruction_grammar()
 
-    def hasError(self):
-        """Return True if errors"""
-        if self.error:
-            return True
-        else:
-            return False
-
     def parse(self, FilePath='./', Filename=''):
         """Parse
         
@@ -65,6 +58,8 @@ class DockerfileParser:
                             self.fileparsed.append([self.line_counter, parseLine])
                     except ParseFatalException as e:
                         self.error.append(str(e.msg))
+
+        return self.error
                         
     def dockerfile_instruction_grammar(self):
         """dockerfile_instruction_grammar"""
@@ -73,7 +68,7 @@ class DockerfileParser:
         #
         def error(s, loc, expr, error):
             """Main error template"""
-            raise ParseFatalException(config.DOCKERFILE_ERROR[210].format(ligne=self.line_counter, colonne=error.loc, inst=self.currentInstructionName, erreur=error.msg))
+            raise ParseFatalException(config.DOCKERFILE_ERROR[202].format(ligne=self.line_counter, colonne=error.loc, inst=self.currentInstructionName, erreur=error.msg))
 
         #
         # Parse Action (Basic verification)
@@ -84,7 +79,7 @@ class DockerfileParser:
             self.currentInstructionName = toks[0]
 
             if toks[0] not in config.INSTRUCTION_CONFIG_LIST:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[201], loc=loc)
+                raise ParseFatalException(config.DOCKERFILE_ERROR[211], loc=loc)
 
             self.currentInstruction = config.INSTRUCTION_CONFIG_LIST[toks[0]]
 
@@ -92,13 +87,13 @@ class DockerfileParser:
             """Check if the table form is correct for the current instruction arguments"""
 
             if(self.currentInstruction[0] == 1):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[203], loc=loc)
+                raise ParseFatalException(config.DOCKERFILE_ERROR[213], loc=loc)
         
         def args_list_parse(strng, loc, toks):
             """Check if the list form is correct for the current instruction arguments"""
 
             if(self.currentInstruction[0] == 2):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[204], loc=loc)
+                raise ParseFatalException(config.DOCKERFILE_ERROR[214], loc=loc)
         
         def args_num_parse(strng, loc, toks):
             """Check if the number of arguments is correct"""
@@ -107,15 +102,15 @@ class DockerfileParser:
             maxArg = self.currentInstruction[2]
             nbArgs = len(toks)
             if (not minArg <= nbArgs <= maxArg):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[205].format(nombre=nbArgs, min=minArg, max=maxArg), loc=loc)
+                raise ParseFatalException(config.DOCKERFILE_ERROR[215].format(nombre=nbArgs, min=minArg, max=maxArg), loc=loc)
   
         def opt_parse(strng, loc, toks):
             """Check if the option exist and if she's correct for the current instruction"""
             
             if toks[0] not in config.OPTIONAL_OPTION_CONFIG:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[206].format(opt=toks[0]), loc=loc)
+                raise ParseFatalException(config.DOCKERFILE_ERROR[216].format(opt=toks[0]), loc=loc)
             if self.currentInstructionName not in config.OPTIONAL_OPTION_CONFIG[toks[0]]:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[207].format(opt=toks[0]), loc=loc)
+                raise ParseFatalException(config.DOCKERFILE_ERROR[217].format(opt=toks[0]), loc=loc)
 
 
         #INIT
