@@ -97,9 +97,9 @@ DOCKERFILE_ERROR = {
     200 :'DOCKERFILE | Erreur - Fichier introuvable : {chemin}',
 
     #Main dockerfile errors template
-    201 :'DOCKERFILE | Erreur | Service "{service}" | {erreur}',
+    201 :'DOCKERFILE | Erreur {nbErr} | Service "{service}" | \n{erreur}',
     #errors template
-    202 :'\n\t - L:{ligne}\t C:{colonne} \t| Instruction "{inst}" \t| {erreur}',
+    202 :'\t - L:{ligne}\t C:{colonne} \t| Instruction "{inst}" \t| {erreur}\n',
 
     #Parser errors messages
     211 :'Instruction: Instruction inconnue',
@@ -113,7 +113,7 @@ DOCKERFILE_ERROR = {
     #script errors messages
     221 :'Instruction: Non spécifiée ou incorrecte',
     222 :'Instruction: ARG ou FROM doit être en première position',
-    223 :'Fichier / Dossier : {fichiers} Fichiers / Dossiers spécifiés introuvables',
-    224 :'Port:{expose_port} introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})',
-    225 :'Port:{expose_port} syntaxe incorrecte'
+    223 :'Elements: "{fichiers}" - Elements spécifiés introuvables',
+    224 :'Port: "{expose_port}" - Introuvable dans l’instruction ports du Docker-compose.yml ({container_ports})',
+    225 :'Port: "{expose_port}" - Syntaxe incorrecte'
 }

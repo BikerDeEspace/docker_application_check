@@ -56,6 +56,7 @@ def verif_dockerfile(path='./', service='', container_port=None):
             errors.append(inst_error_template.format(
                 erreur=config.DOCKERFILE_ERROR[222])
             )
+
         if instruction == 'FROM':
             instruction_from = True
             #TODO image checking
@@ -88,7 +89,7 @@ def verif_dockerfile(path='./', service='', container_port=None):
             ligne='..', colonne='..', inst='EXPOSE', erreur=config.DOCKERFILE_ERROR[221]
         ))
     
-    return None if not errors else config.DOCKERFILE_ERROR[201].format(service=service, erreur="".join(errors)) 
+    return None if not errors else config.DOCKERFILE_ERROR[201].format(nbErr=len(errors), service=service, erreur="".join(errors)) 
 
 #--------------------
 #verif_docker_compose
@@ -159,15 +160,13 @@ def main():
     #Checking file docker-compose.yml
     errors.extend(verif_docker_compose(docker_compose_path))
 
-    #Check if they are no errors
+    #Check if no errors
     if not errors:
         #Exec docker-compose up command
-
-        #TODO docker-compose up filepath
         process = Popen(['docker-compose','-f', str(docker_compose_path), 'up', '-d'], stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
 
-        #Check if they are no errors
+        #Check if no errors
         if stderr:
             errors.append(config.DOCKER_COMPOSER_ERROR[111].format(erreur=stderr.decode('utf-8')))
         else:

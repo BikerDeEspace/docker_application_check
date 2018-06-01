@@ -1,0 +1,7 @@
+DOCKERFILE | Erreur 2 | Service "app" | 
+	 - L:6	 C:.. 	| Instruction "COPY" 	| Elements: "sr/" - Elements spécifiés introuvables
+	 - L:9	 C:.. 	| Instruction "EXPOSE" 	| Port: "efg" - Syntaxe incorrecte
+
+DOCKERFILE | Erreur 2 | Service "db" | 
+	 - L:3	 C:4 	| Instruction "RUN" 	| Expected {["argument1", "argument2" …] | argument1 argument2 …}
+	 - L:5	 C:8 	| Instruction "WORKDIR" 	| Argument: Actuel:2 | Autorisés : Min:1, Max:1
