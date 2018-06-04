@@ -123,7 +123,7 @@ class DockerfileParser:
         OPT = Regex(r'--[a-z]+=').setName('Option').setParseAction(opt_parse)
 
         STR = Regex(r'\"((.|\s)+?)\"').setName("chaîne de caractère")
-        ARG = Regex(r'(?:(?!\bAS\b)\S)+').setName("argument")
+        ARG = Regex(r'\S+').setName("argument")
 
         EOL = lineEnd().setName("fin de ligne").suppress()
         COM = Regex(r'#.*').suppress()
@@ -154,10 +154,8 @@ class DockerfileParser:
         t_opt = OneOrMore(OPT - Group(ARG))
         t_opt.setParseAction(opt_parse)
 
-        t_opt_inst = Literal('AS') - Group(ARG)
-
         #instruction
-        instruction = INST - Group(Optional(t_opt)) - Group(t_args) - Group(Optional(t_opt_inst))
+        instruction = INST - Group(Optional(t_opt)) - Group(t_args)
 
         #line grammar
         line = (stringStart - (COM | Optional(instruction)) - EOL - stringEnd()).setFailAction(error)

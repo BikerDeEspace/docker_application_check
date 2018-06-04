@@ -47,6 +47,8 @@ def verif_dockerfile(path='./', service='', container_port=None):
         #opt = complete_instruction[1]
         #opt_instruction = complete_instruction[3]
 
+        print(line_number, '++', instruction, '++', complete_instruction)
+
         #Instruction error template
         inst_error_template = config.DOCKERFILE_ERROR[202].format(
             ligne=line_number, colonne='..', inst=instruction, erreur='{erreur}'
