@@ -1,6 +1,7 @@
-import config as config
+from conf.constant import DOCKER_COMPOSE_FILENAMES
+from conf.errors import DOCKER_COMPOSER_ERROR
+from classe import Service
 
-import Service as srv
 import yaml
 
 from subprocess import  Popen, PIPE
@@ -12,7 +13,7 @@ class DockerCompose:
         self.errors = list()
         self.docker_compose_path = docker_compose_path
 
-        gen = (name for name in config.DOCKER_COMPOSE_FILENAMES if (docker_compose_path / name).exists)
+        gen = (name for name in DOCKER_COMPOSE_FILENAMES if (docker_compose_path / name).exists)
         self.docker_compose_file = docker_compose_path / next(gen, None)
     
     def get_errors(self):
@@ -23,7 +24,7 @@ class DockerCompose:
             self.data = yaml.load(stream)    
         services = self.data['services']
         for service_name in services:
-            yield srv.Service(self.docker_compose_path, service_name, services[service_name])
+            yield Service.Service(self.docker_compose_path, service_name, services[service_name])
 
     def check_file(self):
         process = Popen([
@@ -34,7 +35,7 @@ class DockerCompose:
 
         #if errors
         if stderr:
-            self.errors.append(config.DOCKER_COMPOSER_ERROR[110].format(erreur=stderr.decode('utf-8')))
+            self.errors.append(DOCKER_COMPOSER_ERROR[110].format(erreur=stderr.decode('utf-8')))
         else:
             for service in self.get_service():
                 service.check_service()

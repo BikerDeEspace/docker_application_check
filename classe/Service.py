@@ -1,7 +1,13 @@
-import Dockerfile as dockerfile
-import config as config
+from conf.errors import DOCKERFILE_ERROR
+
+from classe import DockerfileParser
+
+from conf.errors import DOCKERFILE_ERROR
 
 class Service:
+    """ 
+    Class who represent a Service in the docker_compose.yml file
+    """
     def __init__(self, path, service_name, data):
         self.errors = list()
 
@@ -22,9 +28,9 @@ class Service:
             #Check if build is not in short version
             #Check dockerfile linked to the service
             if 'context' in build:
-                self.dockerfile = dockerfile.Dockerfile(self.path / build['context'])
+                self.dockerfile = DockerfileParser.DockerfileParser(self.path / build['context'])
             else:
-                self.dockerfile = dockerfile.Dockerfile(self.path / build)
+                self.dockerfile = DockerfileParser.DockerfileParser(self.path / build)
 
 
     def check_service(self):
@@ -33,4 +39,4 @@ class Service:
         self.dockerfile.check_dockerfile()
         errors = self.dockerfile.get_errors()
         if errors: 
-            self.errors.extend(config.DOCKERFILE_ERROR[201].format(nbErr=len(errors), service=self.service_name, erreur="".join(errors)))
+            self.errors.extend(DOCKERFILE_ERROR[201].format(nbErr=len(errors), service=self.service_name, erreur="".join(errors)))

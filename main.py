@@ -1,22 +1,14 @@
-#Dockerfile parser
-import Dockerfile as dfp
-import DockerCompose as dockerC
-#config file
-import config as config
+from classe import DockerfileParser, DockerCompose
 
-#Log files names
+from conf.constant import DOCKER_PROJECTS_PATH
+from conf.errors import DOCKER_COMPOSER_ERROR
+
 from time import gmtime, strftime
-#stderr catching
 from subprocess import  Popen, PIPE
-#path manipulation
 from pathlib import Path
 
-#docker-compose file parsing
-import yaml
 #input
 import os
-#regex
-import re
 
 #--------------------
 # Main
@@ -25,10 +17,10 @@ def main():
     """Fonction principale du script de vérification"""
     errors = list()
 
-    docker_compose_path = config.DOCKER_PROJECTS_PATH / input('Enter docker-compose file folder: ')
+    docker_compose_path = DOCKER_PROJECTS_PATH / input('Enter docker-compose file folder: ')
     
     #Checking file docker-compose.yml
-    docker_compose = dockerC.DockerCompose(docker_compose_path)
+    docker_compose = DockerCompose.DockerCompose(docker_compose_path)
     docker_compose.check_file()
 
     errors.extend(docker_compose.get_errors())
@@ -41,7 +33,7 @@ def main():
 
         #Check if no errors
         if stderr:
-            errors.append(config.DOCKER_COMPOSER_ERROR[111].format(erreur=stderr.decode('utf-8')))
+            errors.append(DOCKER_COMPOSER_ERROR[111].format(erreur=stderr.decode('utf-8')))
 
     if errors:
         #Write errors in a log file 

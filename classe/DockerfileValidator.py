@@ -1,13 +1,14 @@
-from pathlib import Path
-
-import config as config
 import sys
 import re
 
+from conf.errors import DOCKERFILE_ERROR
+
+from pathlib import Path
+
+
 class DockerfileValidator:
     """ DockerfileValidator
-
-    Check each instruction arguments of a Dockerfile
+    Class who check each instruction arguments of a Dockerfile
     """
     
     def __init__(self, path):
@@ -39,7 +40,7 @@ class DockerfileValidator:
         valid = True
         if not list(self.path.glob(file)):
             valid = False
-            self.errors.append(config.DOCKERFILE_ERROR[223].format(fichiers=file))
+            self.errors.append(DOCKERFILE_ERROR[223].format(fichiers=file))
         return valid
 
     #
@@ -50,7 +51,7 @@ class DockerfileValidator:
         #Accepted form : arg1 | arg1 AS arg2
         if len(params) == 2 or (len(params) == 3 and params[1] != 'AS'):
             valid = False
-            self.errors.append(config.DOCKERFILE_ERROR[215].format(
+            self.errors.append(DOCKERFILE_ERROR[215].format(
                 nombre=len(params), min=1, max=1, loc='{loc}'))
         return valid
 
@@ -67,6 +68,6 @@ class DockerfileValidator:
         for param in params:
             if not re.fullmatch(r'[0-9]+(\/(tcp|udp))?', param):
                 valid = False
-                self.errors.append(config.DOCKERFILE_ERROR[225].format(expose_port=param))
+                self.errors.append(DOCKERFILE_ERROR[225].format(expose_port=param))
         return valid
     

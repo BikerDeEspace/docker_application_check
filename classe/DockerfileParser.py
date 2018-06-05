@@ -1,20 +1,27 @@
 import os
 import re
-import config as config
 
-import DockerfileValidator as validator
+from conf.constant import DOCKERFILE_FILENAMES
+from conf.errors import DOCKERFILE_ERROR
+from conf.instructions import INSTRUCTION_CONFIG_LIST, OPTIONAL_OPTION_CONFIG
+
+from classe import DockerfileValidator
 
 from pathlib import Path
 from pyparsing import *
 
-class Dockerfile:
+
+class DockerfileParser:
+    """ Dockerfile
+    Class who check & parse the instructions of a Dockerfile
+    """
     def __init__(self, dockerfile_path='./', dockerfile_name=''):
         self.errors = list()
         self.result = list()
 
-        self.validator = validator.DockerfileValidator(dockerfile_path)
+        self.validator = DockerfileValidator.DockerfileValidator(dockerfile_path)
 
-        gen = (name for name in config.DOCKERFILE_FILENAMES if (dockerfile_path / name).exists)
+        gen = (name for name in DOCKERFILE_FILENAMES if (dockerfile_path / name).exists)
         self.dockerfile_path = dockerfile_path / next(gen, dockerfile_name)
 
 
@@ -41,7 +48,7 @@ class Dockerfile:
 
     def check_dockerfile(self):
         if not os.path.exists(self.dockerfile_path):
-            self.errors.append(config.DOCKERFILE_ERROR[200].format(chemin=self.dockerfile_path))
+            self.errors.append(DOCKERFILE_ERROR[200].format(chemin=self.dockerfile_path))
         else:
             for line in self.getlines():
                 try:
@@ -60,7 +67,7 @@ class Dockerfile:
         #
         def error(s, loc, expr, error):
             """Main error template"""
-            raise ParseFatalException(config.DOCKERFILE_ERROR[202].format(ligne=self.line_counter, colonne=error.loc, inst=self.currentInstructionName, erreur=error.msg))
+            raise ParseFatalException(DOCKERFILE_ERROR[202].format(ligne=self.line_counter, colonne=error.loc, inst=self.currentInstructionName, erreur=error.msg))
 
         #
         # Parse Action (Basic verification)
@@ -76,22 +83,22 @@ class Dockerfile:
 
             self.currentInstructionName = toks[0]
 
-            if toks[0] not in config.INSTRUCTION_CONFIG_LIST:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[211], loc=loc)
+            if toks[0] not in INSTRUCTION_CONFIG_LIST:
+                raise ParseFatalException(DOCKERFILE_ERROR[211], loc=loc)
 
-            self.currentInstruction = config.INSTRUCTION_CONFIG_LIST[toks[0]]
+            self.currentInstruction = INSTRUCTION_CONFIG_LIST[toks[0]]
 
         def args_table_parse(strng, loc, toks):
             """Check if the table form is correct for the current instruction arguments"""
 
             if(self.currentInstruction[0] == 1):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[213], loc=loc)
+                raise ParseFatalException(DOCKERFILE_ERROR[213], loc=loc)
         
         def args_list_parse(strng, loc, toks):
             """Check if the list form is correct for the current instruction arguments"""
 
             if(self.currentInstruction[0] == 2):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[214], loc=loc)
+                raise ParseFatalException(DOCKERFILE_ERROR[214], loc=loc)
         
         def args_num_parse(strng, loc, toks):
             """Check if the number of arguments is correct"""
@@ -100,15 +107,15 @@ class Dockerfile:
             maxArg = self.currentInstruction[2]
             nbArgs = len(toks)
             if (not minArg <= nbArgs <= maxArg):
-                raise ParseFatalException(config.DOCKERFILE_ERROR[215].format(nombre=nbArgs, min=minArg, max=maxArg), loc=loc)
+                raise ParseFatalException(DOCKERFILE_ERROR[215].format(nombre=nbArgs, min=minArg, max=maxArg), loc=loc)
 
         def opt_parse(strng, loc, toks):
             """Check if the option exist and if she's correct for the current instruction"""
             
-            if toks[0] not in config.OPTIONAL_OPTION_CONFIG:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[216].format(opt=toks[0]), loc=loc)
-            if self.currentInstructionName not in config.OPTIONAL_OPTION_CONFIG[toks[0]]:
-                raise ParseFatalException(config.DOCKERFILE_ERROR[217].format(opt=toks[0]), loc=loc)
+            if toks[0] not in OPTIONAL_OPTION_CONFIG:
+                raise ParseFatalException(DOCKERFILE_ERROR[216].format(opt=toks[0]), loc=loc)
+            if self.currentInstructionName not in OPTIONAL_OPTION_CONFIG[toks[0]]:
+                raise ParseFatalException(DOCKERFILE_ERROR[217].format(opt=toks[0]), loc=loc)
 
 
         #INIT
