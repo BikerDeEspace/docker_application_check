@@ -1,4 +1,4 @@
-from classe import DockerfileParser, DockerCompose
+from classes import DockerfileParser, DockerCompose
 
 from conf.constant import DOCKER_PROJECTS_PATH
 from conf.errors import DOCKER_COMPOSER_ERROR

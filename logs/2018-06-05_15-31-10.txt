@@ -1,0 +1,6 @@
+DOCKERFILE | Erreur 5 | Service "app" | 
+	 - L:3	 C:0 	| Instruction "AR" 	| Instruction: Instruction inconnue
+	 - L:7	 C:0 	| Instruction "COPY" 	| Elements: "sc/" - Elements spécifiés introuvables
+	 - L:11	 C:0 	| Instruction "EXPOSE" 	| Port: "80/ud" - Syntaxe incorrecte
+	 - L:13	 C:5 	| Instruction "COPY" 	| Argument: Actuel:4 | Autorisés : Min:2, Max:2
+	 - L:15	 C:4 	| Instruction "RUN" 	| Expected {["argument1", "argument2" …] | argument1 argument2 …}

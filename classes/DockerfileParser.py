@@ -5,7 +5,7 @@ from conf.constant import DOCKERFILE_FILENAMES
 from conf.errors import DOCKERFILE_ERROR
 from conf.instructions import INSTRUCTION_CONFIG_LIST, OPTIONAL_OPTION_CONFIG
 
-from classe import DockerfileValidator
+from classes import DockerfileValidator
 
 from pathlib import Path
 from pyparsing import *

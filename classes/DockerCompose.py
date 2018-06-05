@@ -1,6 +1,7 @@
 from conf.constant import DOCKER_COMPOSE_FILENAMES
 from conf.errors import DOCKER_COMPOSER_ERROR
-from classe import Service
+
+from classes import ServiceValidator
 
 import yaml
 
@@ -24,7 +25,7 @@ class DockerCompose:
             self.data = yaml.load(stream)    
         services = self.data['services']
         for service_name in services:
-            yield Service.Service(self.docker_compose_path, service_name, services[service_name])
+            yield ServiceValidator.Service(self.docker_compose_path, service_name, services[service_name])
 
     def check_file(self):
         process = Popen([

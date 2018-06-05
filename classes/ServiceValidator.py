@@ -1,6 +1,6 @@
 from conf.errors import DOCKERFILE_ERROR
 
-from classe import DockerfileParser
+from classes import DockerfileParser
 
 from conf.errors import DOCKERFILE_ERROR
 
