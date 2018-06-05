@@ -1,2 +1,0 @@
-DOCKER COMPOSE | CONFIG | Erreur |
-.FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\llegrand\\Documents\\DockerProjects\\docker-compose.yml'
