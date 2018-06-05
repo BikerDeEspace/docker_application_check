@@ -26,12 +26,6 @@ DOCKERFILE_FILENAMES = [
 #
 # INSTRUCTIONS
 #
-#Optional instruction before main instruction
-OPTIONAL_INSTRUCTION = {
-    'ONBUILD'
-    'HEALTHCHECK'
-}
-
 #Main instruction
 #InstructionName : [ArgumentsFormCode, ArgumentsNumMin, ArgumentsNumMax]
 #ArgumentsFormCode :
@@ -39,7 +33,7 @@ OPTIONAL_INSTRUCTION = {
 # -- 2: Table forms (Ex: ["arg1", "arg2"])
 # -- 3: All possible forms
 INSTRUCTION_CONFIG_LIST = {
-    'FROM'      : [1, 1, 1], 
+    'FROM'      : [1, 1, 3], 
     'RUN'       : [3, 1, max], 
     'ADD'       : [3, 2, 2], 
     'COPY'      : [3, 2, 2], 
@@ -59,12 +53,7 @@ INSTRUCTION_CONFIG_LIST = {
 #OptionName : []
 OPTIONAL_OPTION_CONFIG = {
     '--chown='  : ['COPY', 'ADD'],
-    '--from='   : ['COPY'],
-
-    '--interval=': ['HEALTHCHECK'],
-    '--timeout=': ['HEALTHCHECK'],
-    '--start-period=': ['HEALTHCHECK'],
-    '--retries=': ['HEALTHCHECK']
+    '--from='   : ['COPY']
 }
 
 #Optional instructions after main instruction arguments
@@ -74,7 +63,7 @@ OPTIONAL_OPTION_CONFIG = {
 # -- 2: Table forms (Ex: ["arg1", "arg2"])
 # -- 3: All possible forms
 OPTIONAL_INSTRUCTION_CONFIG = {
-    'AS': [1, 1, 1]
+    'AS': ['FROM']
 }
 
 #

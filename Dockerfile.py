@@ -2,39 +2,36 @@ import os
 import re
 import config as config
 
-from pathlib import Path
+import DockerfileValidator as validator
 
-#pyparsing imports
+from pathlib import Path
 from pyparsing import *
 
-class DockerfileParser:
-    def __init__(self):
-        """DockerfileParser Class Constructor
+class Dockerfile:
+    def __init__(self, dockerfile_path='./', dockerfile_name=''):
+        self.errors = list()
+        self.result = list()
 
-        Check & Verify the syntax of a Dockerfile type file
+        self.validator = validator.DockerfileValidator(dockerfile_path)
 
-        """
-        self.fileparsed = list()
-        self.error = list()
-        self.grammar = self.dockerfile_instruction_grammar()
+        gen = (name for name in config.DOCKERFILE_FILENAMES if (dockerfile_path / name).exists)
+        self.dockerfile_path = dockerfile_path / next(gen, dockerfile_name)
 
-    def parse(self, FilePath='./', Filename=''):
-        """Parse
-        
-        Parsing of a Dockerfile file
-        
-        Params :
-        FilePath -- Dockerfile directory (./ by default)
-        Filename -- Dockerfile filename (Dockerfile by default)
 
-        """
+    def get_errors(self):
+        return self.errors
 
+    def get_result(self):
+        return self.result
+
+
+    def getlines(self):
+        """Generator - Get lines of the file with continuation char"""
+        self.line_counter = 0
+        str_table = list()
         # By default Pyparsing stops when he detect any error 
         # To get all errors, we need to parse the file line by line
-        def getlines(file):
-            """Generator - Get lines of the file with continuation char"""
-            self.line_counter = 0
-            str_table = list()
+        with open(self.dockerfile_path, 'r') as file:
             for line in file.readlines():
                 self.line_counter += 1
                 str_table.append(line)
@@ -42,24 +39,19 @@ class DockerfileParser:
                     yield " ".join(str_table)
                     str_table.clear()
 
-        #Check Dockerfile default names
-        gen = (name for name in config.DOCKERFILE_FILENAMES if (FilePath / name).exists)
-        self.file = FilePath / next(gen, Filename)
-
-        if not os.path.exists(self.file):
-            self.error.append(config.DOCKERFILE_ERROR[200].format(chemin=self.file))
+    def check_dockerfile(self):
+        if not os.path.exists(self.dockerfile_path):
+            self.errors.append(config.DOCKERFILE_ERROR[200].format(chemin=self.dockerfile_path))
         else:
-            #Parsing line by line
-            with open(self.file, 'r') as file:
-                for line in getlines(file):
-                    try:
-                        parseLine = self.grammar.parseString(line)
-                        if parseLine:
-                            self.fileparsed.append([self.line_counter, parseLine])
-                    except ParseFatalException as e:
-                        self.error.append(str(e.msg))
+            for line in self.getlines():
+                try:
+                    parseLine = self.dockerfile_instruction_grammar().parseString(line)
+                    if parseLine:
+                        self.result.append([self.line_counter, parseLine])
+                except ParseFatalException as e:
+                    self.errors.append(str(e.msg))
 
-        return self.error
+        return True if not self.errors else False
                         
     def dockerfile_instruction_grammar(self):
         """dockerfile_instruction_grammar"""
@@ -73,6 +65,12 @@ class DockerfileParser:
         #
         # Parse Action (Basic verification)
         #
+
+        def arg_validate(strng, loc, toks):
+            """Do some verfications for the instruction arguments"""
+            if not self.validator.validate_instruction(toks):
+                raise ParseFatalException(self.validator.get_errors(), loc=loc)
+
         def instructions_parse(strng, loc, toks):
             """Check if the instruction exist in the config file"""
 
@@ -103,7 +101,7 @@ class DockerfileParser:
             nbArgs = len(toks)
             if (not minArg <= nbArgs <= maxArg):
                 raise ParseFatalException(config.DOCKERFILE_ERROR[215].format(nombre=nbArgs, min=minArg, max=maxArg), loc=loc)
-  
+
         def opt_parse(strng, loc, toks):
             """Check if the option exist and if she's correct for the current instruction"""
             
@@ -155,7 +153,7 @@ class DockerfileParser:
         t_opt.setParseAction(opt_parse)
 
         #instruction
-        instruction = INST - Group(Optional(t_opt)) - Group(t_args)
+        instruction = (INST - Group(Optional(t_opt)) - Group(t_args)).setParseAction(arg_validate)
 
         #line grammar
         line = (stringStart - (COM | Optional(instruction)) - EOL - stringEnd()).setFailAction(error)

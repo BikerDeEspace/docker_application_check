@@ -1,35 +1,37 @@
 import os
 import re
 import config as config
+
 from pathlib import Path
+
+#pyparsing imports
 from pyparsing import *
 
-class Dockerfile:
-    def __init__(self, dockerfile_path='./', dockerfile_name=''):
-        self.errors = list()
-        self.result = list()
+class DockerfileParser:
+    def __init__(self):
+        """DockerfileParser Class Constructor
+        Check & Verify the syntax of a Dockerfile type file
+        """
+        self.fileparsed = list()
+        self.error = list()
+        self.grammar = self.dockerfile_instruction_grammar()
 
-        if dockerfile_name != '':
-            gen = (name for name in config.DOCKERFILE_FILENAMES if (dockerfile_name / name).exists)
-            self.dockerfile_path = dockerfile_path / next(gen, None)
-        else:
-            self.dockerfile_path / dockerfile_name
+    def parse(self, FilePath='./', Filename=''):
+        """Parse
+        
+        Parsing of a Dockerfile file
+        
+        Params :
+        FilePath -- Dockerfile directory (./ by default)
+        Filename -- Dockerfile filename (Dockerfile by default)
+        """
 
-
-    def get_errors(self):
-        return filter(None, self.errors)
-
-    def get_result(self):
-        return self.result
-
-
-    def getlines(self):
-        """Generator - Get lines of the file with continuation char"""
-        self.line_counter = 0
-        str_table = list()
         # By default Pyparsing stops when he detect any error 
         # To get all errors, we need to parse the file line by line
-        with open(self.dockerfile_path, 'r') as file:
+        def getlines(file):
+            """Generator - Get lines of the file with continuation char"""
+            self.line_counter = 0
+            str_table = list()
             for line in file.readlines():
                 self.line_counter += 1
                 str_table.append(line)
@@ -37,19 +39,24 @@ class Dockerfile:
                     yield " ".join(str_table)
                     str_table.clear()
 
-    def check_dockerfile(self):
-        if not os.path.exists(self.dockerfile_path):
-            self.errors.append(config.DOCKERFILE_ERROR[200].format(chemin=self.dockerfile_path))
-        else:
-            for line in self.getlines():
-                try:
-                    parseLine = self.dockerfile_instruction_grammar().parseString(line)
-                    if parseLine:
-                        self.result.append([self.line_counter, parseLine])
-                except ParseFatalException as e:
-                    self.errors.append(str(e.msg))
+        #Check Dockerfile default names
+        gen = (name for name in config.DOCKERFILE_FILENAMES if (FilePath / name).exists)
+        self.file = FilePath / next(gen, Filename)
 
-        return True if not self.errors else False
+        if not os.path.exists(self.file):
+            self.error.append(config.DOCKERFILE_ERROR[200].format(chemin=self.file))
+        else:
+            #Parsing line by line
+            with open(self.file, 'r') as file:
+                for line in getlines(file):
+                    try:
+                        parseLine = self.grammar.parseString(line)
+                        if parseLine:
+                            self.fileparsed.append([self.line_counter, parseLine])
+                    except ParseFatalException as e:
+                        self.error.append(str(e.msg))
+
+        return self.error
                         
     def dockerfile_instruction_grammar(self):
         """dockerfile_instruction_grammar"""
@@ -113,7 +120,7 @@ class Dockerfile:
         OPT = Regex(r'--[a-z]+=').setName('Option').setParseAction(opt_parse)
 
         STR = Regex(r'\"((.|\s)+?)\"').setName("chaîne de caractère")
-        ARG = Regex(r'\S+').setName("argument")
+        ARG = Regex(r'(?:(?!\bAS\b)\S)+').setName("argument")
 
         EOL = lineEnd().setName("fin de ligne").suppress()
         COM = Regex(r'#.*').suppress()
@@ -144,8 +151,10 @@ class Dockerfile:
         t_opt = OneOrMore(OPT - Group(ARG))
         t_opt.setParseAction(opt_parse)
 
+        t_opt_inst = Literal('AS') - Group(ARG)
+
         #instruction
-        instruction = INST - Group(Optional(t_opt)) - Group(t_args)
+        instruction = INST - Group(Optional(t_opt)) - Group(t_args) - Group(Optional(t_opt_inst))
 
         #line grammar
         line = (stringStart - (COM | Optional(instruction)) - EOL - stringEnd()).setFailAction(error)
