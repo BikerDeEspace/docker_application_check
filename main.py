@@ -38,12 +38,12 @@ def main():
     if errors:
         #Write errors in a log file 
         # - filename : %Y-%m-%d_%H-%M-%S
-        ''' f = open('logs/{time}.txt'.format(
+        f = open('logs/{time}.txt'.format(
             time=strftime("%Y-%m-%d_%H-%M-%S", gmtime())
         ),'w') 
 
         f.writelines(errors)
-        f.close() '''
+        f.close()
 
         #Print errors
         print("".join(errors))

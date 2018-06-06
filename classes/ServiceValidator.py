@@ -36,7 +36,8 @@ class Service:
     def check_service(self):
         self.check_build()
 
-        self.dockerfile.check_dockerfile()
-        errors = self.dockerfile.get_errors()
-        if errors: 
-            self.errors.extend(DOCKERFILE_ERROR[201].format(nbErr=len(errors), service=self.service_name, erreur="".join(errors)))
+        if self.dockerfile:
+            self.dockerfile.check_dockerfile()
+            errors = self.dockerfile.get_errors()
+            if errors: 
+                self.errors.extend(DOCKERFILE_ERROR[201].format(nbErr=len(errors), service=self.service_name, erreur="".join(errors)))

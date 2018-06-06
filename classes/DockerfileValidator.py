@@ -18,6 +18,7 @@ class DockerfileValidator:
         self.path = path
 
     def validate_instruction(self, inst):
+        
         valid = True
         instruction_name = inst[0]
         instruction_params = inst[2]
@@ -26,7 +27,8 @@ class DockerfileValidator:
         try:
             valid = getattr(self, "check_%s" % instruction_name)(instruction_params)
         except AttributeError:
-            print('Instruction :', instruction_name, 'non vérifiée')
+            pass
+            #print('Instruction :', instruction_name, 'non vérifiée')
         return valid
 
 
