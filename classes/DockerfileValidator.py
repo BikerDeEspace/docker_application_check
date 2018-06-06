@@ -29,6 +29,8 @@ class DockerfileValidator:
             print('Instruction :', instruction_name, 'non vérifiée')
         return valid
 
+
+
     def get_errors(self):
         errors = "\n".join(self.errors)
         self.errors.clear()
