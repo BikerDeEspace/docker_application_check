@@ -12,13 +12,14 @@ class DockerfileValidator:
     """
     
     def __init__(self, path):
+        """DockerfileValidator constructor"""
         self.errors = list()
         self.instruction_from = False
         self.instruction_expose = False
         self.path = path
 
     def validate_instruction(self, inst):
-        
+        """Return true if the arguments are valid"""
         valid = True
         instruction_name = inst[0]
         instruction_params = inst[2]
@@ -34,23 +35,28 @@ class DockerfileValidator:
 
 
     def get_errors(self):
+        """Return errors and clear list"""
         errors = "\n".join(self.errors)
         self.errors.clear()
         return errors
 
-
+    #
+    #   Usefull functions
+    #
     def check_file(self, file):
         """Check if file or folder exist"""
         valid = True
-        if not list(self.path.glob(file)):
-            valid = False
-            self.errors.append(DOCKERFILE_ERROR[223].format(fichiers=file))
+        if file != '.':
+            if not list(self.path.glob(file)):
+                valid = False
+                self.errors.append(DOCKERFILE_ERROR[223].format(fichiers=file))
         return valid
 
     #
     #   Instructions validators
     #
     def check_FROM(self, params):
+        """Check arguments for FROM instruction"""
         valid = True
         #Accepted form : arg1 | arg1 AS arg2
         if len(params) == 2 or (len(params) == 3 and params[1] != 'AS'):
@@ -60,12 +66,15 @@ class DockerfileValidator:
         return valid
 
     def check_ADD(self, params):
+        """Check arguments for ADD instruction"""
         return self.check_file(params[0])
 
     def check_COPY(self, params):
+        """Check arguments for COPY instruction"""
         return self.check_file(params[0])
 
     def check_EXPOSE(self, params):
+        """Check arguments for EXPOSE instruction"""
         valid = True
         self.instruction_expose = True
         #Check if param syntax is correct (80[/tcp])

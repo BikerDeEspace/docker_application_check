@@ -1,4 +1,5 @@
-from classes import DockerfileParser, DockerCompose
+from classes.DockerfileParser import DockerfileParser
+from classes.DockerCompose import DockerCompose
 
 from conf.constant import DOCKER_PROJECTS_PATH
 from conf.errors import DOCKER_COMPOSER_ERROR
@@ -20,30 +21,31 @@ def main():
     docker_compose_path = DOCKER_PROJECTS_PATH / input('Enter docker-compose file folder: ')
     
     #Checking file docker-compose.yml
-    docker_compose = DockerCompose.DockerCompose(docker_compose_path)
+    docker_compose = DockerCompose(docker_compose_path)
     docker_compose.check_file()
 
     errors.extend(docker_compose.get_errors())
 
+
     #Check if no errors
-    if not errors:
+    """ if not errors:
         #Exec docker-compose up command
-        process = Popen(['docker-compose','-f', str(docker_compose_path), 'up', '-d'], stdout=PIPE, stderr=PIPE)
+        process = Popen(['docker-compose','-f', str(docker_compose.docker_compose_file) , 'up', '-d'], stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
 
         #Check if no errors
         if stderr:
-            errors.append(DOCKER_COMPOSER_ERROR[111].format(erreur=stderr.decode('utf-8')))
+            errors.append(DOCKER_COMPOSER_ERROR[111].format(erreur=stderr.decode('utf-8'))) """
 
     if errors:
         #Write errors in a log file 
         # - filename : %Y-%m-%d_%H-%M-%S
-        f = open('logs/{time}.txt'.format(
+        ''' f = open('logs/{time}.txt'.format(
             time=strftime("%Y-%m-%d_%H-%M-%S", gmtime())
         ),'w') 
 
         f.writelines(errors)
-        f.close()
+        f.close() '''
 
         #Print errors
         print("".join(errors))
