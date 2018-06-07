@@ -8,7 +8,11 @@ from conf.instructions import INSTRUCTION_CONFIG_LIST, OPTIONAL_OPTION_CONFIG
 from classes import DockerfileValidator
 
 from pathlib import Path
-from pyparsing import *
+
+from pyparsing import Regex, stringStart, stringEnd, lineEnd, Literal, OneOrMore, Optional, ZeroOrMore, Group
+from pyparsing import ParserElement, ParseFatalException
+
+
 
 
 class DockerfileParser:
@@ -54,7 +58,7 @@ class DockerfileParser:
                 try:
                     parseLine = self.dockerfile_instruction_grammar().parseString(line)
                     if parseLine:
-                        self.result.append([self.line_counter, parseLine])
+                        self.result.append(parseLine)
                 except ParseFatalException as e:
                     self.errors.append(str(e.msg))
 
