@@ -1,4 +1,4 @@
-from conf.errors import DOCKERFILE_ERROR
+from conf.errors import DOCKERFILE_ERROR, SERVICE_ERROR, MAIN_ERROR_TEMPLATE
 
 from classes.DockerfileParser import DockerfileParser
 from classes.ServiceValidator import ServiceValidator
@@ -15,6 +15,8 @@ class Service:
         self.path = path
         self.service_name = service_name
         self.service_data = service_data
+
+        self.nb_errors = 0
 
     def get_errors(self):
         """Return errors from the current service"""
@@ -35,7 +37,7 @@ class Service:
         return dockerfile
 
     def check_service(self):
-        """Control the service verifications"""
+        """All service verification"""
 
         #Get dockerfile if exist
         dockerfile = self.get_dockerfile()
@@ -48,9 +50,18 @@ class Service:
             validator = ServiceValidator(dockerfile.get_result(), self.service_data)
             validator.validate()
 
-            #Get errors from Parser and Validator
-            self.errors.extend(dockerfile.get_errors())
-            self.errors.extend(validator.get_errors())
+            #ERRORS TEXT FORMAT
+            parser_errors = dockerfile.get_errors()
+            validator_errors = validator.get_errors()
 
-            if self.errors: 
-                self.errors.append(DOCKERFILE_ERROR[201].format(nbErr=len(self.errors), service=self.service_name, erreur="".join(self.errors)))
+            #parser errors format
+            if parser_errors:
+                self.errors.append(MAIN_ERROR_TEMPLATE[2].format(nbErr=len(parser_errors), erreur="".join(parser_errors)))
+            #validator errors format
+            if validator_errors:
+                self.errors.append(MAIN_ERROR_TEMPLATE[3].format(nbErr=len(validator_errors), erreur="".join(validator_errors)))
+
+            #main errors format
+            if self.errors:
+                self.nb_errors = len(parser_errors) + len(validator_errors)
+                self.errors = MAIN_ERROR_TEMPLATE[1].format(service=self.service_name, nbErr=self.nb_errors, erreur="".join(self.errors))

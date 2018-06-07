@@ -1,4 +1,7 @@
-from conf.errors import DOCKERFILE_ERROR, DOCKER_COMPOSER_ERROR
+from conf.errors import DOCKERFILE_ERROR, DOCKER_COMPOSER_ERROR, SERVICE_ERROR
+
+
+import re
 
 class ServiceValidator:
     """
@@ -10,24 +13,13 @@ class ServiceValidator:
         self.dockerfile_data = dockerfile_data
         self.service_data = service_data
 
+        self.ports_checked = False
+
     def get_errors(self):
-        """Return errors list from the validation process"""
-        return self.errors
-
-
-    def get_dockerfile_inst(self, inst_name):
-        """Return a list of dockerfile instruction"""
+        """Return a list of formated errors from the validation process"""
         result = list()
-        for data in self.dockerfile_data:
-            if data[0] == inst_name:
-                result.append(data[2])
-        return result
-
-    def get_docker_compose_inst(self, inst_name):
-        """Return a list of docker-compose instruction"""
-        result = None
-        if inst_name in self.service_data:
-            result = self.service_data[inst_name]
+        for error in self.errors:
+            result.append(SERVICE_ERROR[302].format(erreur=error))
         return result
 
     def validate(self):
@@ -47,16 +39,58 @@ class ServiceValidator:
             except AttributeError:
                 pass
 
+
+    def get_dockerfile_inst(self, inst_name):
+        """Return a list of dockerfile instruction"""
+        result = list()
+        for data in self.dockerfile_data:
+            if data[0] == inst_name:
+                result.extend(data[2])
+        return result
+
+    def get_docker_compose_inst(self, inst_name):
+        """Return content of docker-compose instruction"""
+        result = list()
+        if inst_name in self.service_data:
+            result = self.service_data[inst_name]
+        return result
+
+    #
+    #   CHECKER
+    #
+    def ports(self, port1, port2):
+        """Function who compare ports between the dockerfile and the service 
+
+        Params :
+        port1 -- List() -> Docker-compose.yml configured ports
+        port2 -- List() -> Dockerfile exposed ports
+
+        """
+        #Only one check for this instruction is needed
+        #TODO decorator ? 
+        if not self.ports_checked:
+            self.ports_checked = True
+            #If number of ports are different
+            if len(port1) != len(port2):
+                self.errors.append(SERVICE_ERROR[311].format(docker_compose_port=len(port1), dockerfile_ports=len(port2)))
+            #Expose port not present in ports configuration
+            for port in port1:
+                matches = re.search(r'(?<=:).*', port)
+                if matches.group() not in port2:
+                    self.errors.append(SERVICE_ERROR[312].format(container_port=matches.group()))
+
+
+
     #
     #   DOCKER_COMPOSE CHECK
     #       service_check_*
     #
     def service_check_ports(self, data):
-        print('ports | expose ', self.get_dockerfile_inst('EXPOSE'))
+        self.ports(data, self.get_dockerfile_inst('EXPOSE'))
 
     #
     #   DOCKERFILE CHECK
     #       docker_check_*
     #
     def docker_check_EXPOSE(self, data):
-        print('expose | ports ', self.get_docker_compose_inst('ports'))
+        self.ports(self.get_docker_compose_inst('ports'), self.get_dockerfile_inst('EXPOSE'))

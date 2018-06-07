@@ -1,5 +1,5 @@
 from conf.constant import DOCKER_COMPOSE_FILENAMES
-from conf.errors import DOCKER_COMPOSER_ERROR
+from conf.errors import DOCKER_COMPOSER_ERROR, MAIN_ERROR_TEMPLATE
 
 from classes.Service import Service
 
