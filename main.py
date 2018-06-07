@@ -26,26 +26,24 @@ def main():
 
     errors.extend(docker_compose.get_errors())
 
-
     #Check if no errors
-    """ if not errors:
-        #Exec docker-compose up command
+    if not errors:
+        pass
+        """#Exec docker-compose up command
         process = Popen(['docker-compose','-f', str(docker_compose.docker_compose_file) , 'up', '-d'], stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
 
         #Check if no errors
         if stderr:
             errors.append(DOCKER_COMPOSER_ERROR[111].format(erreur=stderr.decode('utf-8'))) """
-
-    if errors:
+    else:
         #Write errors in a log file 
         # - filename : %Y-%m-%d_%H-%M-%S
-        ''' f = open('logs/{time}.txt'.format(
+        """ f = open('logs/{time}.log'.format(
             time=strftime("%Y-%m-%d_%H-%M-%S", gmtime())
-        ),'w') 
-
+        ),'w', encoding = "UTF-8") 
         f.writelines(errors)
-        f.close() '''
+        f.close() """
 
         #Print errors
         print("".join(errors))

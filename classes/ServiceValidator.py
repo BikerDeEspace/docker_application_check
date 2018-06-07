@@ -2,7 +2,6 @@ from conf.errors import SERVICE_ERROR
 
 
 import re
-
 class ServiceValidator:
     """
     Class who check the differences between dockerfile and docker-compose service
@@ -73,11 +72,12 @@ class ServiceValidator:
             #If number of ports are different
             if len(port1) != len(port2):
                 self.errors.append(SERVICE_ERROR[311].format(docker_compose_port=len(port1), dockerfile_ports=len(port2)))
-            #Expose port not present in ports configuration
-            for port in port1:
-                matches = re.search(r'(?<=:).*', port)
-                if matches.group() not in port2:
-                    self.errors.append(SERVICE_ERROR[312].format(container_port=matches.group()))
+            else:    
+                #Expose port not present in ports configuration
+                for port in port1:
+                    matches = re.search(r'(?<=:).*', port)
+                    if matches.group() not in port2:
+                        self.errors.append(SERVICE_ERROR[312].format(container_port=matches.group()))
 
 
 
@@ -86,7 +86,7 @@ class ServiceValidator:
     #       service_check_*
     #
     def service_check_ports(self, data):
-        self.ports(data, self.get_dockerfile_inst('EXPOSE'))
+        self.ports(self.get_docker_compose_inst('ports'), self.get_dockerfile_inst('EXPOSE'))
 
     #
     #   DOCKERFILE CHECK

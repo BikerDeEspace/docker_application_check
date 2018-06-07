@@ -3,7 +3,7 @@
 #
 
 MAIN_ERROR_TEMPLATE = {
-    0 : 'APPLICATION | Erreur {nbErr} |\n',
+    0 : 'APPLICATION | Erreur {nbErr} |\n{erreur}',
     1 : '-> SERVICE "{service}" | Erreur {nbErr} |\n{erreur}',
     2 : '\tDOCKERFILE | Erreur {nbErr} | \n{erreur}',
     3 : '\tDOCKER COMPOSE | Erreur {nbErr} | \n{erreur}'

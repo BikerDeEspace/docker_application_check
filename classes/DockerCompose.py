@@ -22,7 +22,6 @@ class DockerCompose:
     
     def get_errors(self):
         """Return errors list from the validation process"""
-
         return self.errors
 
     def get_service(self):
