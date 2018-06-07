@@ -4,7 +4,7 @@
 
 MAIN_ERROR_TEMPLATE = {
     0 : 'APPLICATION | Erreur {nbErr} |\n',
-    1 : 'SERVICE "{service}" | Erreur {nbErr} |\n{erreur}',
+    1 : '-> SERVICE "{service}" | Erreur {nbErr} |\n{erreur}',
     2 : '\tDOCKERFILE | Erreur {nbErr} | \n{erreur}',
     3 : '\tDOCKER COMPOSE | Erreur {nbErr} | \n{erreur}'
 }
@@ -24,7 +24,7 @@ DOCKERFILE_ERROR = {
     200 :'Erreur - Fichier introuvable : {chemin}',
 
     #errors template
-    202 :'\t\t - L:{ligne} C:{colonne} | Instruction "{inst}" | {erreur}\n',
+    202 :'\t - L:{ligne} C:{colonne} | Instruction "{inst}" | {erreur}\n',
 
     211 :'Instruction: Instruction inconnue',
     212 :'Argument: Aucun argument spécifié',
@@ -43,9 +43,9 @@ DOCKERFILE_ERROR = {
 #SERVICES
 #Errors between Dockercompose & Dockerfile
 SERVICE_ERROR = {
-    302 :'\t\t - {erreur}\n',
+    302 :'\t - {erreur}\n',
 
-    311 :'Port: Nombre Incorrect | Port configurés: {docker_compose_port}, Ports exposés: {dockerfile_ports}\n',
-    312 :'Port: "{container_port}" - Non exposé dans le dockerfile\n'
+    311 :'Port: Nombre Incorrect | Port configurés: {docker_compose_port}, Ports exposés: {dockerfile_ports}',
+    312 :'Port: "{container_port}" - Non exposé dans le dockerfile'
 }
 

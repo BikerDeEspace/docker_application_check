@@ -1,9 +1,7 @@
-from conf.errors import DOCKERFILE_ERROR, SERVICE_ERROR, MAIN_ERROR_TEMPLATE
+from conf.errors import MAIN_ERROR_TEMPLATE
 
 from classes.DockerfileParser import DockerfileParser
 from classes.ServiceValidator import ServiceValidator
-
-from conf.errors import DOCKERFILE_ERROR
 
 class Service:
     """ 
@@ -26,14 +24,14 @@ class Service:
         """Get the service dockerfile if exist"""
         dockerfile = None
 
-        build = self.service_data['build']
-        if build:
-            #Check if build is not in short version
-            if 'context' in build:
-                dockerfile = DockerfileParser(self.path / build['context'])
-            else:
-                dockerfile = DockerfileParser(self.path / build)
-                
+        if 'build' in self.service_data:
+            build = self.service_data['build']
+            if build:
+                #Check if build is not in short version
+                if 'context' in build:
+                    dockerfile = DockerfileParser(self.path / build['context'])
+                else:
+                    dockerfile = DockerfileParser(self.path / build)
         return dockerfile
 
     def check_service(self):

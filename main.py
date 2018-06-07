@@ -48,7 +48,6 @@ def main():
         f.close() '''
 
         #Print errors
-        print('err')
         print("".join(errors))
         
         

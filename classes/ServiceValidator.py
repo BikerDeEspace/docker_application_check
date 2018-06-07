@@ -1,4 +1,4 @@
-from conf.errors import DOCKERFILE_ERROR, DOCKER_COMPOSER_ERROR, SERVICE_ERROR
+from conf.errors import SERVICE_ERROR
 
 
 import re
@@ -18,7 +18,7 @@ class ServiceValidator:
     def get_errors(self):
         """Return a list of formated errors from the validation process"""
         result = list()
-        for error in self.errors:
+        for error in self.errors: 
             result.append(SERVICE_ERROR[302].format(erreur=error))
         return result
 
