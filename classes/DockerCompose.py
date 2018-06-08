@@ -1,5 +1,5 @@
 from conf.constant import DOCKER_COMPOSE_FILENAMES
-from conf.errors import DOCKER_COMPOSER_ERROR
+from conf.errors import DOCKER_COMPOSER_ERROR, MAIN_ERROR_TEMPLATE
 
 from classes.Service import Service
 
@@ -17,12 +17,14 @@ class DockerCompose:
         self.errors = list()
         self.docker_compose_path = docker_compose_path
 
+        self.error_counter = 0
+
         gen = (name for name in DOCKER_COMPOSE_FILENAMES if (docker_compose_path / name).exists)
         self.docker_compose_file = docker_compose_path / next(gen, None)
     
     def get_errors(self):
-        """Return errors list from the validation process"""
-        return self.errors
+        """Return errors come from the validation process"""
+        return MAIN_ERROR_TEMPLATE[0].format(nbErr=self.error_counter, erreur="".join(self.errors))
 
     def get_service(self):
         """Service Generator - Return each services object""" 
@@ -51,3 +53,4 @@ class DockerCompose:
             for service in self.get_service():
                 service.check_service()
                 self.errors.extend(service.get_errors())
+                self.error_counter += service.nb_errors

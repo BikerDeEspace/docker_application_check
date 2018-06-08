@@ -42,24 +42,32 @@ class Service:
 
         if dockerfile:
             #DockerfileParser 
-            dockerfile.check_dockerfile()
+            if not dockerfile.check_dockerfile():
+                parser_errors = dockerfile.get_errors()
+                self.nb_errors += len(parser_errors)
+                
+                self.errors.append(MAIN_ERROR_TEMPLATE[2].format(
+                    nbErr=len(parser_errors), 
+                    erreur="".join(dockerfile.get_errors()))
+                )
 
             #Service Validator
             validator = ServiceValidator(dockerfile.get_result(), self.service_data)
-            validator.validate()
+            if not validator.validate(): 
+                validator_errors = validator.get_errors()
+                self.nb_errors += len(validator_errors)
 
-            #ERRORS TEXT FORMAT
-            parser_errors = dockerfile.get_errors()
-            validator_errors = validator.get_errors()
-
-            #parser errors format
-            if parser_errors:
-                self.errors.append(MAIN_ERROR_TEMPLATE[2].format(nbErr=len(parser_errors), erreur="".join(parser_errors)))
-            #validator errors format
-            if validator_errors:
-                self.errors.append(MAIN_ERROR_TEMPLATE[3].format(nbErr=len(validator_errors), erreur="".join(validator_errors)))
+                self.errors.append(MAIN_ERROR_TEMPLATE[3].format(
+                    nbErr=len(validator_errors), 
+                    erreur="".join(validator_errors))
+                )
 
             #main errors format
             if self.errors:
-                self.nb_errors = len(parser_errors) + len(validator_errors)
-                self.errors = MAIN_ERROR_TEMPLATE[1].format(service=self.service_name, nbErr=self.nb_errors, erreur="".join(self.errors))
+                self.errors = MAIN_ERROR_TEMPLATE[1].format(
+                    service=self.service_name, 
+                    nbErr=self.nb_errors, 
+                    erreur="".join(self.errors)
+                )
+
+        return True if not self.errors else False

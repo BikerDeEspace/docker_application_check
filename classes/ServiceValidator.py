@@ -37,6 +37,8 @@ class ServiceValidator:
                 getattr(self, "service_check_%s" % data)(self.service_data[data])
             except AttributeError:
                 pass
+        
+        return True if not self.errors else False
 
 
     def get_dockerfile_inst(self, inst_name):
@@ -71,13 +73,13 @@ class ServiceValidator:
             self.ports_checked = True
             #If number of ports are different
             if len(port1) != len(port2):
-                self.errors.append(SERVICE_ERROR[311].format(docker_compose_port=len(port1), dockerfile_ports=len(port2)))
-            else:    
-                #Expose port not present in ports configuration
-                for port in port1:
-                    matches = re.search(r'(?<=:).*', port)
-                    if matches.group() not in port2:
-                        self.errors.append(SERVICE_ERROR[312].format(container_port=matches.group()))
+                self.errors.append(SERVICE_ERROR[311].format(docker_compose_port=len(port1), dockerfile_ports=len(port2)))  
+
+            #Expose port not present in ports configuration
+            for port in port1:
+                matches = re.search(r'(?<=:).*', port)
+                if matches.group() not in port2:
+                    self.errors.append(SERVICE_ERROR[312].format(container_port=matches.group()))
 
 
 
