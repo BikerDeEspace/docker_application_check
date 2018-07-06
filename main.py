@@ -22,12 +22,10 @@ def main():
     
     #Checking file docker-compose.yml
     docker_compose = DockerCompose(docker_compose_path)
-    docker_compose.check_file()
-
-    errors.extend(docker_compose.get_errors())
+    
 
     #Check if no errors
-    if not errors:
+    if docker_compose.check_file():
         pass
         """#Exec docker-compose up command
         process = Popen(['docker-compose','-f', str(docker_compose.docker_compose_file) , 'up', '-d'], stdout=PIPE, stderr=PIPE)
@@ -37,6 +35,9 @@ def main():
         if stderr:
             errors.append(DOCKER_COMPOSER_ERROR[111].format(erreur=stderr.decode('utf-8'))) """
     else:
+        errors.append(docker_compose.get_errors())
+
+    if errors:
         #Write errors in a log file 
         # - filename : %Y-%m-%d_%H-%M-%S
         """ f = open('logs/{time}.log'.format(

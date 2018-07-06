@@ -27,14 +27,14 @@ class ServiceValidator:
         #VERIF BY DOCKERFILE INSTRUCTIONS
         for data in self.dockerfile_data:
             try:
-                getattr(self, "docker_check_%s" % data[0])(data[2])
+                getattr(self, "docker_check_%s" % data[0])()
             except AttributeError:
                 pass
 
         #VERIF BY SERVICE CONFIGURATION
         for data in self.service_data:
             try:
-                getattr(self, "service_check_%s" % data)(self.service_data[data])
+                getattr(self, "service_check_%s" % data)()
             except AttributeError:
                 pass
         
@@ -87,12 +87,12 @@ class ServiceValidator:
     #   DOCKER_COMPOSE CHECK
     #       service_check_*
     #
-    def service_check_ports(self, data):
+    def service_check_ports(self):
         self.ports(self.get_docker_compose_inst('ports'), self.get_dockerfile_inst('EXPOSE'))
 
     #
     #   DOCKERFILE CHECK
     #       docker_check_*
     #
-    def docker_check_EXPOSE(self, data):
+    def docker_check_EXPOSE(self):
         self.ports(self.get_docker_compose_inst('ports'), self.get_dockerfile_inst('EXPOSE'))

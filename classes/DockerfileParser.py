@@ -46,7 +46,7 @@ class DockerfileParser:
             for line in file.readlines():
                 self.line_counter += 1
                 str_table.append(line)
-                if not re.fullmatch(r".*\s\\\s*\n", line):
+                if not re.fullmatch(r".*\\\s*\n", line):
                     yield " ".join(str_table)
                     str_table.clear()
 

@@ -54,3 +54,5 @@ class DockerCompose:
                 service.check_service()
                 self.errors.extend(service.get_errors())
                 self.error_counter += service.nb_errors
+
+        return True if not self.errors else False
